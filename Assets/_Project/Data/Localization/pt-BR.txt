@@ -38,3 +38,58 @@ toast.passout = Você apagou de cansaço e acordou em casa.
 sleep.confirm = Dormir agora e encerrar o dia?
 ui.yes = Sim
 ui.no = Não
+
+# Inventário
+inventory.title = Mochila
+inventory.hint = Clique: pegar e soltar · Botão direito: dividir · Clique fora: descartar
+tooltip.sell = Vale {0} {1}
+
+quality.normal = Normal
+quality.silver = Prata
+quality.gold = Ouro
+
+category.tool = Ferramenta
+category.seed = Semente
+category.crop = Colheita
+category.resource = Material
+category.food = Comida
+category.misc = Diversos
+
+# Itens: item.<id>.name / item.<id>.desc
+item.hoe.name = Enxada
+item.hoe.desc = Pra revirar a terra e deixar ela pronta pro plantio.
+item.watering_can.name = Regador
+item.watering_can.desc = Planta com sede não cresce. Enche no poço.
+item.scythe.name = Foice
+item.scythe.desc = Corta mato e colhe o que deu.
+item.axe.name = Machado
+item.axe.desc = Pra derrubar galho e árvore. Cuidado com o dedão.
+item.pickaxe.name = Picareta
+item.pickaxe.desc = Quebra pedra do sítio. Tem pedra pra vida inteira.
+
+item.wood.name = Madeira
+item.wood.desc = Serve pra construir e pro fogão a lenha.
+item.stone.name = Pedra
+item.stone.desc = Tem pedra em tudo que é canto aqui no sítio.
+
+item.lettuce_seed.name = Semente de Alface
+item.lettuce_seed.desc = Cresce rápido e é boa pra começar.
+item.cassava_seed.name = Semente de Mandioca
+item.cassava_seed.desc = Demora um pouco, mas rende bem.
+item.bean_seed.name = Semente de Feijão
+item.bean_seed.desc = Dá feijão de novo e de novo, sem precisar replantar.
+item.corn_seed.name = Semente de Milho
+item.corn_seed.desc = Demora, mas paga bem. A Dona Cida adora bolo de milho.
+item.strawberry_seed.name = Semente de Morango
+item.strawberry_seed.desc = Caprichosa, mas dá fruta várias vezes.
+
+item.lettuce.name = Alface
+item.lettuce.desc = Fresquinha e crocante. O Tonho não gosta.
+item.cassava.name = Mandioca
+item.cassava.desc = Raiz boa de mesa e de farinha.
+item.bean.name = Feijão
+item.bean.desc = Pro feijão com arroz de todo dia.
+item.corn.name = Milho
+item.corn.desc = Doce e dourado.
+item.strawberry.name = Morango
+item.strawberry.desc = Vermelhinho e docinho.

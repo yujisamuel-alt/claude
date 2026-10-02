@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using Enxada.Calendar;
 using Enxada.Core;
+using Enxada.Inventory;
 using Enxada.Player;
 using Unity.Cinemachine;
 using UnityEditor;
@@ -86,6 +87,7 @@ namespace Enxada.EditorTools
 
             HudBuilder.Build(inputActions);
             var transition = BuildSleepSystem(player.transform, clockDriver);
+            BuildWorldItems(ItemSetup.EnsureDatabase());
             BuildDayNightLighting(globalLight);
             AddDebugKeys(clockDriver, transition);
 
@@ -235,6 +237,38 @@ namespace Enxada.EditorTools
         }
 
         // ------------------------------------------------------------------ dormir e luz
+
+        // Itens espalhados na clareira para testar coleta, pilhas, qualidades e inventário cheio.
+        private static void BuildWorldItems(ItemDatabase database)
+        {
+            var go = new GameObject("WorldItems");
+            var spawner = go.AddComponent<WorldItemSpawner>();
+
+            var drops = new[]
+            {
+                ("wood", 12, ItemQuality.Normal, new Vector2(27.5f, 19.5f)),
+                ("stone", 8, ItemQuality.Normal, new Vector2(28.5f, 18.5f)),
+                ("lettuce_seed", 20, ItemQuality.Normal, new Vector2(26.5f, 15.5f)),
+                ("lettuce", 4, ItemQuality.Silver, new Vector2(21.5f, 15.5f)),
+                ("lettuce", 2, ItemQuality.Gold, new Vector2(20.5f, 16.5f)),
+                ("corn", 3, ItemQuality.Normal, new Vector2(25.5f, 21.5f)),
+                ("axe", 1, ItemQuality.Normal, new Vector2(23.5f, 21.5f))
+            };
+
+            var so = new SerializedObject(spawner);
+            var array = so.FindProperty("initialDrops");
+            array.arraySize = drops.Length;
+            for (var i = 0; i < drops.Length; i++)
+            {
+                var element = array.GetArrayElementAtIndex(i);
+                element.FindPropertyRelative("item").objectReferenceValue = ItemSetup.Find(database, drops[i].Item1);
+                element.FindPropertyRelative("quantity").intValue = drops[i].Item2;
+                element.FindPropertyRelative("quality").enumValueIndex = (int)drops[i].Item3;
+                element.FindPropertyRelative("position").vector2Value = drops[i].Item4;
+            }
+
+            so.ApplyModifiedPropertiesWithoutUndo();
+        }
 
         private static DayTransitionController BuildSleepSystem(Transform player, ClockDriver clockDriver)
         {

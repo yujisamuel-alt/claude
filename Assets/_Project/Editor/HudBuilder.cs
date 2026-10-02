@@ -59,6 +59,7 @@ namespace Enxada.EditorTools
                 so.FindProperty("toast").objectReferenceValue = toast;
             });
 
+            InventoryUiBuilder.Build(root, inputActions);
             BuildConfirmDialog(root, inputActions);
             BuildFader(root);
         }
@@ -117,7 +118,7 @@ namespace Enxada.EditorTools
 
         // ------------------------------------------------------------------ helpers
 
-        private static RectTransform CreatePanel(Transform parent, string name, Vector2 anchor, Vector2 position,
+        internal static RectTransform CreatePanel(Transform parent, string name, Vector2 anchor, Vector2 position,
             Vector2 size)
         {
             var go = new GameObject(name, typeof(RectTransform), typeof(Image));
@@ -134,7 +135,7 @@ namespace Enxada.EditorTools
             return rect;
         }
 
-        private static TextMeshProUGUI CreateText(Transform parent, string name, float size,
+        internal static TextMeshProUGUI CreateText(Transform parent, string name, float size,
             TextAlignmentOptions alignment, Vector2 anchorMin, Vector2 anchorMax)
         {
             var go = new GameObject(name, typeof(RectTransform));
@@ -153,7 +154,7 @@ namespace Enxada.EditorTools
             return text;
         }
 
-        private static Button CreateButton(Transform parent, string name, Vector2 anchorMin, Vector2 anchorMax,
+        internal static Button CreateButton(Transform parent, string name, Vector2 anchorMin, Vector2 anchorMax,
             out TextMeshProUGUI label)
         {
             var go = new GameObject(name, typeof(RectTransform), typeof(Image), typeof(Button));
@@ -169,7 +170,7 @@ namespace Enxada.EditorTools
             return go.GetComponent<Button>();
         }
 
-        private static void Stretch(RectTransform rect)
+        internal static void Stretch(RectTransform rect)
         {
             rect.anchorMin = Vector2.zero;
             rect.anchorMax = Vector2.one;
@@ -178,7 +179,7 @@ namespace Enxada.EditorTools
             rect.offsetMax = Vector2.zero;
         }
 
-        private static void Wire(Object target, System.Action<SerializedObject> assign)
+        internal static void Wire(Object target, System.Action<SerializedObject> assign)
         {
             var so = new SerializedObject(target);
             assign(so);

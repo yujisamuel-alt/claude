@@ -142,14 +142,18 @@ namespace Enxada.EditorTools
             }
         });
 
-        private static Sprite EnsureSprite(string name, Action<Color32[], int> paint, int size = 16)
+        private static Sprite EnsureSprite(string name, Action<Color32[], int> paint, int size = 16) =>
+            EnsureSpriteIn(SpritesFolder, name, paint, size);
+
+        /// <summary>Gera (se ainda não existir) um PNG 16x16 pintado por código e o importa como sprite pixel perfect.</summary>
+        public static Sprite EnsureSpriteIn(string folder, string name, Action<Color32[], int> paint, int size = 16)
         {
-            var path = $"{SpritesFolder}/{name}.png";
+            var path = $"{folder}/{name}.png";
             var existing = AssetDatabase.LoadAssetAtPath<Sprite>(path);
             if (existing != null)
                 return existing;
 
-            EnsureFolder(SpritesFolder);
+            EnsureFolder(folder);
 
             var pixels = new Color32[size * size];
             paint(pixels, size);
@@ -172,20 +176,20 @@ namespace Enxada.EditorTools
             return AssetDatabase.LoadAssetAtPath<Sprite>(path);
         }
 
-        private static void Fill(Color32[] px, Color32 color)
+        public static void Fill(Color32[] px, Color32 color)
         {
             for (var i = 0; i < px.Length; i++) px[i] = color;
         }
 
         // Retângulo [x0,x1) x [y0,y1), origem embaixo à esquerda.
-        private static void Rect(Color32[] px, int s, int x0, int y0, int x1, int y1, Color32 color)
+        public static void Rect(Color32[] px, int s, int x0, int y0, int x1, int y1, Color32 color)
         {
             for (var y = y0; y < y1; y++)
             for (var x = x0; x < x1; x++)
                 px[y * s + x] = color;
         }
 
-        private static void Disc(Color32[] px, int s, float cx, float cy, float radius, Color32 color)
+        public static void Disc(Color32[] px, int s, float cx, float cy, float radius, Color32 color)
         {
             for (var y = 0; y < s; y++)
             for (var x = 0; x < s; x++)
@@ -194,6 +198,28 @@ namespace Enxada.EditorTools
                 var dy = y + 0.5f - cy;
                 if (dx * dx + dy * dy <= radius * radius)
                     px[y * s + x] = color;
+            }
+        }
+
+        /// <summary>Linha de 1 pixel (Bresenham), útil para cabos de ferramenta.</summary>
+        public static void Line(Color32[] px, int s, int x0, int y0, int x1, int y1, Color32 color)
+        {
+            var dx = Math.Abs(x1 - x0);
+            var dy = -Math.Abs(y1 - y0);
+            var sx = x0 < x1 ? 1 : -1;
+            var sy = y0 < y1 ? 1 : -1;
+            var err = dx + dy;
+
+            while (true)
+            {
+                if (x0 >= 0 && x0 < s && y0 >= 0 && y0 < s)
+                    px[y0 * s + x0] = color;
+                if (x0 == x1 && y0 == y1)
+                    break;
+
+                var e2 = 2 * err;
+                if (e2 >= dy) { err += dy; x0 += sx; }
+                if (e2 <= dx) { err += dx; y0 += sy; }
             }
         }
 

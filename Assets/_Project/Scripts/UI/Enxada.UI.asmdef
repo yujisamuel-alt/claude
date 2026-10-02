@@ -4,6 +4,7 @@
     "references": [
         "Enxada.Core",
         "Enxada.Calendar",
+        "Enxada.Inventory",
         "Unity.TextMeshPro",
         "UnityEngine.UI",
         "Unity.InputSystem"

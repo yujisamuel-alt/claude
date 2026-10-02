@@ -84,7 +84,7 @@ Pós-MVP (só deixar a arquitetura preparada): pesca, mina, animais, cozinha, up
 | 0 | Setup: CLAUDE.md, git, pacotes, pastas, asmdefs, cena Boot, menu `Enxada/Setup` | ✅ Código pronto; aguardando validação no editor |
 | 1 | Jogador, Input System, câmera Cinemachine, mapa de teste com colisão | ✅ Código pronto; aguardando validação no editor |
 | 2 | Relógio, calendário, luz do dia, dormir | ✅ Código pronto; aguardando validação no editor |
-| 3 | Inventário e barra rápida | ⏳ |
+| 3 | Inventário e barra rápida | ✅ Código pronto; aguardando validação no editor |
 | 4 | Ferramentas e energia | ⏳ |
 | 5 | Plantio, colheita e clima simples | ⏳ |
 | 6 | Baú de entregas, dinheiro e Venda da Dona Cida | ⏳ |
@@ -122,3 +122,19 @@ Pós-MVP (só deixar a arquitetura preparada): pesca, mina, animais, cozinha, up
 - Fim da Primavera: `DayTransitionController` dispara o canal `Data/Events/DemoEnded` ao dormir no dia 28; a tela de fim da demo vem na Etapa 6.
 - Cena **Boot** passa a ser regerada (`Enxada/Setup/Passos/4. Regerar cena Boot` ou ao criar o mapa de teste); a **TestMap** tem Bootstrap próprio.
 - Atalhos de teste na TestMap (só editor/dev build): **F2** velocidade 1x/20x · **F3** pula para 23:40 · **F4** dormir/encerrar o dia.
+
+### Etapa 3: o que existe
+- `Inventory/Logic` (puro, testado): `ItemStack` (id, quantidade, qualidade), `InventoryModel` (36 slots = barra de 12 + mochila de 24;
+  `TryAdd`, `Remove`, `Take`/`Place`/`PlaceOne` para a pilha "na mão", `RoomFor`, barra rápida com seleção/rolagem, `Snapshot`/`Restore` para o save),
+  `HotbarMath`, `PickupRules`, `ItemKeys`, `IItemCatalog`.
+- Dados: `ItemDefinition` (SO: id, categoria, ícone, preço de venda, pilha máxima), `ItemDatabase` (SO, implementa `IItemCatalog`),
+  `InventoryConfig` (SO: tamanhos, itens iniciais, raios/velocidades dos itens no chão). Nome e descrição vêm do texto: `item.<id>.name` / `item.<id>.desc`.
+- Itens criados por `ItemSetup` (5 ferramentas, madeira, pedra, 5 sementes, 5 colheitas) com ícones placeholder; preço de venda das colheitas = tabela da Primavera,
+  demais preços são placeholders. Preço 0 = não vendável.
+- `InventoryInstaller` (registra `InventoryModel`, `ItemDatabase`, `InventoryConfig` e dá os itens iniciais), `HotbarSelector` (teclas 1–0 - =, roda do mouse, ombros do gamepad).
+- Itens no chão: `WorldItemSpawner` (um único Update para todos, pool, atração/coleta, arremesso ao descartar; `Spawn`/`Drop` para outros sistemas), `WorldItem`.
+  Item descartado só pode ser pego de novo depois de `dropPickupDelay`.
+- `IPlayerAnchor` (Core): o `PlayerController` informa posição/direção sem os outros módulos conhecerem o Player.
+- UI: `HotbarView`, `InventoryScreen` (E/Tab/Y; pausa o mundo; clique pega/solta, direito divide ou solta 1, arrastar e soltar, clicar fora descarta; D-pad navega, A pega/solta),
+  `InventorySlotView` (Selectable), `InventoryDropZone`, `SlotVisual`. Montados por `InventoryUiBuilder`.
+- Ainda não existe: usar o item selecionado (Etapa 4), vender (Etapa 6), save (Etapa 7).

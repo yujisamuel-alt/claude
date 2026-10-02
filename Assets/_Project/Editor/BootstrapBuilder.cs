@@ -1,7 +1,9 @@
 using Enxada.Calendar;
 using Enxada.Core;
+using Enxada.Inventory;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 namespace Enxada.EditorTools
 {
@@ -12,6 +14,7 @@ namespace Enxada.EditorTools
     public static class BootstrapBuilder
     {
         public const string ClockConfigPath = "Assets/_Project/Data/Config/ClockConfig.asset";
+        public const string InputActionsPath = "Assets/_Project/Settings/Input/EnxadaControls.inputactions";
         public const string TextTablePath = "Assets/_Project/Data/Localization/pt-BR.txt";
 
         public static GameObject Build(GameConfig gameConfig, bool loadFirstScene, out ClockDriver clockDriver)
@@ -29,7 +32,16 @@ namespace Enxada.EditorTools
             var calendar = go.AddComponent<CalendarInstaller>();
             Wire(calendar, "clockConfig", clockConfig);
 
+            var database = ItemSetup.EnsureDatabase();
+            var inventoryConfig = ItemSetup.EnsureConfig(database);
+            var inventory = go.AddComponent<InventoryInstaller>();
+            Wire(inventory, "config", inventoryConfig);
+            Wire(inventory, "database", database);
+
             clockDriver = go.AddComponent<ClockDriver>();
+
+            var hotbarSelector = go.AddComponent<HotbarSelector>();
+            Wire(hotbarSelector, "inputActions", AssetDatabase.LoadAssetAtPath<InputActionAsset>(InputActionsPath));
 
             // O Bootstrap vai por último: seu Awake (ordem -1000) é o que chama os instaladores,
             // e os componentes acima já existem no mesmo objeto.
@@ -38,9 +50,10 @@ namespace Enxada.EditorTools
             so.FindProperty("config").objectReferenceValue = gameConfig;
             so.FindProperty("loadFirstScene").boolValue = loadFirstScene;
             var installers = so.FindProperty("installers");
-            installers.arraySize = 2;
+            installers.arraySize = 3;
             installers.GetArrayElementAtIndex(0).objectReferenceValue = text;
             installers.GetArrayElementAtIndex(1).objectReferenceValue = calendar;
+            installers.GetArrayElementAtIndex(2).objectReferenceValue = inventory;
             so.ApplyModifiedPropertiesWithoutUndo();
 
             return go;

@@ -2,7 +2,8 @@
     "name": "Enxada.Inventory",
     "rootNamespace": "Enxada.Inventory",
     "references": [
-        "Enxada.Core"
+        "Enxada.Core",
+        "Unity.InputSystem"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

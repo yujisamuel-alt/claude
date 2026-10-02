@@ -5,6 +5,7 @@
         "Enxada.Core",
         "Enxada.Player",
         "Enxada.Calendar",
+        "Enxada.Inventory",
         "Enxada.UI",
         "Unity.InputSystem",
         "Unity.Cinemachine",

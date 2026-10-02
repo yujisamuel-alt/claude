@@ -9,7 +9,7 @@ namespace Enxada.Player
     /// A decisão de movimento está em MovementInput (lógica pura e testada); aqui só fica a ponte com a Unity.
     /// </summary>
     [RequireComponent(typeof(Rigidbody2D))]
-    public sealed class PlayerController : MonoBehaviour
+    public sealed class PlayerController : MonoBehaviour, IPlayerAnchor
     {
         [SerializeField] private PlayerConfig config;
         [SerializeField] private InputActionAsset inputActions;
@@ -25,6 +25,22 @@ namespace Enxada.Player
 
         public FacingDirection Facing { get; private set; } = FacingDirection.Down;
         public bool IsMoving { get; private set; }
+
+        Transform IPlayerAnchor.Transform => transform;
+
+        Vector2 IPlayerAnchor.FacingVector
+        {
+            get
+            {
+                switch (Facing)
+                {
+                    case FacingDirection.Up: return Vector2.up;
+                    case FacingDirection.Left: return Vector2.left;
+                    case FacingDirection.Right: return Vector2.right;
+                    default: return Vector2.down;
+                }
+            }
+        }
 
         /// <summary>Diálogos, menus e cutscenes desligam isso para travar o jogador.</summary>
         public bool InputEnabled { get; set; } = true;
@@ -47,7 +63,10 @@ namespace Enxada.Player
 
             _move = inputActions.FindAction("Gameplay/Move", true);
             ApplyFacingSprite();
+            ServiceLocator.Replace<IPlayerAnchor>(this);
         }
+
+        private void OnDestroy() => ServiceLocator.Unregister<IPlayerAnchor>(this);
 
         private void Start() => ServiceLocator.TryGet(out _pause);
 
