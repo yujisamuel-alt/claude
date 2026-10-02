@@ -98,3 +98,8 @@ item.strawberry.desc = Vermelhinho e docinho.
 hud.water = Água: {0}/{1}
 toast.can_empty = O regador está vazio. Encha no poço ou na lagoa!
 toast.tool_weak = Essa ferramenta ainda não dá conta disso.
+
+# Plantio e clima
+weather.sunny = Ensolarado
+weather.rainy = Chuvoso
+toast.wrong_season = Essa semente não pega nessa estação.

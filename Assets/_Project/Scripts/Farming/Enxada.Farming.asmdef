@@ -4,7 +4,8 @@
     "references": [
         "Enxada.Core",
         "Enxada.Inventory",
-        "Enxada.Calendar"
+        "Enxada.Calendar",
+        "Unity.InputSystem"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

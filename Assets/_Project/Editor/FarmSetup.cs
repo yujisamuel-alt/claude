@@ -1,3 +1,4 @@
+using Enxada.Calendar;
 using Enxada.Core;
 using Enxada.Farming;
 using Enxada.Inventory;
@@ -55,6 +56,62 @@ namespace Enxada.EditorTools
 
                 so.ApplyModifiedPropertiesWithoutUndo();
             });
+        }
+
+        public static WeatherConfig EnsureWeatherConfig() =>
+            SetupUtil.EnsureAsset<WeatherConfig>(ConfigFolder + "/WeatherConfig.asset");
+
+        private struct CropEntry
+        {
+            public string Id;
+            public int[] StageDays;
+            public int RegrowDays;
+            public Color32 Leaf;
+            public Color32 Produce;
+        }
+
+        // Dias totais e rebrota seguem a tabela da Primavera; como os dias se dividem entre os estágios é placeholder.
+        private static CropEntry[] SpringCrops() => new[]
+        {
+            new CropEntry { Id = "lettuce", StageDays = new[] { 1, 1, 1, 1 }, RegrowDays = 0,
+                Leaf = new Color32(96, 176, 80, 255), Produce = new Color32(150, 214, 110, 255) },
+            new CropEntry { Id = "cassava", StageDays = new[] { 1, 2, 2, 2 }, RegrowDays = 0,
+                Leaf = new Color32(70, 140, 60, 255), Produce = new Color32(150, 104, 62, 255) },
+            new CropEntry { Id = "bean", StageDays = new[] { 2, 2, 3, 3 }, RegrowDays = 3,
+                Leaf = new Color32(60, 140, 70, 255), Produce = new Color32(130, 200, 90, 255) },
+            new CropEntry { Id = "corn", StageDays = new[] { 2, 3, 3, 4 }, RegrowDays = 0,
+                Leaf = new Color32(90, 160, 70, 255), Produce = new Color32(244, 208, 70, 255) },
+            new CropEntry { Id = "strawberry", StageDays = new[] { 1, 2, 2, 3 }, RegrowDays = 4,
+                Leaf = new Color32(70, 160, 70, 255), Produce = new Color32(220, 50, 70, 255) }
+        };
+
+        public static CropDatabase EnsureCropDatabase(ItemDatabase items)
+        {
+            var definitions = new System.Collections.Generic.List<CropDefinition>();
+            foreach (var entry in SpringCrops())
+            {
+                var lastStage = entry.StageDays.Length;
+                var sprites = new Sprite[lastStage + 1];
+                for (var stage = 0; stage <= lastStage; stage++)
+                    sprites[stage] = PlaceholderArt.CropStage(entry.Id, stage, lastStage, entry.Leaf, entry.Produce);
+
+                var seed = ItemSetup.Find(items, entry.Id + "_seed");
+                var harvest = ItemSetup.Find(items, entry.Id);
+                var local = entry;
+                definitions.Add(SetupUtil.EnsureAsset<CropDefinition>($"{WorldFolder}/crop_{entry.Id}.asset",
+                    asset => asset.Initialize(local.Id, seed, harvest, local.StageDays, local.RegrowDays,
+                        SeasonFlags.Spring, sprites)));
+            }
+
+            var database = SetupUtil.EnsureAsset<CropDatabase>(WorldFolder + "/CropDatabase.asset");
+            var so = new SerializedObject(database);
+            var list = so.FindProperty("crops");
+            list.arraySize = definitions.Count;
+            for (var i = 0; i < definitions.Count; i++)
+                list.GetArrayElementAtIndex(i).objectReferenceValue = definitions[i];
+            so.ApplyModifiedPropertiesWithoutUndo();
+            EditorUtility.SetDirty(database);
+            return database;
         }
 
         public static Tile TilledTile() =>

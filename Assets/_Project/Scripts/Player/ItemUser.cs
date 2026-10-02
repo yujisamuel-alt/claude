@@ -7,13 +7,15 @@ using UnityEngine.InputSystem;
 namespace Enxada.Player
 {
     /// <summary>
-    /// Usa a ferramenta selecionada na barra rápida no tile alvo: primeiro procura um objeto que reaja
-    /// (pedra, galho, mato, poço), depois tenta o chão (arar, regar). Gasta energia se funcionou.
+    /// Usa o item selecionado na barra rápida no tile alvo.
+    /// Ferramenta: primeiro procura um objeto que reaja (pedra, galho, mato, poço), depois tenta o chão
+    /// (arar, regar, colher); gasta energia se funcionou. Semente: planta na terra arada e gasta a semente.
     /// </summary>
-    public sealed class ToolUser : MonoBehaviour
+    public sealed class ItemUser : MonoBehaviour
     {
         private const float SwingDegrees = 70f;
         private const float RejectedLockSeconds = 0.2f;
+        private const float PlantLockSeconds = 0.25f;
 
         [SerializeField] private ToolConfig config;
         [SerializeField] private TargetTileSelector selector;
@@ -40,7 +42,7 @@ namespace Enxada.Player
             if (config == null || selector == null || player == null || grid == null || inputActions == null
                 || swing == null)
             {
-                Debug.LogError("[ToolUser] Referências não atribuídas. Rode Enxada/Setup/Criar Mapa de Teste.", this);
+                Debug.LogError("[ItemUser] Referências não atribuídas. Rode Enxada/Setup/Criar Mapa de Teste.", this);
                 enabled = false;
                 return;
             }
@@ -65,15 +67,51 @@ namespace Enxada.Player
                 return;
 
             if (_use.WasPressedThisFrame())
-                TryUseTool();
+                UseSelectedItem();
         }
 
-        private void TryUseTool()
+        private void UseSelectedItem()
         {
             var stack = _inventory.SelectedStack;
-            if (stack.IsEmpty || !_database.TryGet(stack.ItemId, out var item)
-                || item.Category != ItemCategory.Tool || item.ToolType == ToolType.None
-                || !config.TryGet(item.ToolType, out var entry))
+            if (stack.IsEmpty || !_database.TryGet(stack.ItemId, out var item))
+                return;
+
+            if (item.Category == ItemCategory.Seed)
+                UseSeed(item);
+            else if (item.Category == ItemCategory.Tool && item.ToolType != ToolType.None)
+                UseTool(item);
+        }
+
+        // ------------------------------------------------------------------ sementes
+
+        private void UseSeed(ItemDefinition seed)
+        {
+            if (!ServiceLocator.TryGet<ISeedPlanter>(out var planter))
+                return;
+
+            var cell = selector.TargetCell;
+            var outcome = planter.TryPlant(seed.Id, new CellPosition(cell.x, cell.y));
+
+            switch (outcome.Kind)
+            {
+                case ToolUseKind.Rejected:
+                    Lock(RejectedLockSeconds);
+                    ShowMessage(outcome.MessageKey);
+                    break;
+
+                case ToolUseKind.Used:
+                case ToolUseKind.UsedFree:
+                    _inventory.Take(_inventory.SelectedHotbarIndex, 1); // plantar não gasta energia, só a semente
+                    Lock(PlantLockSeconds);
+                    break;
+            }
+        }
+
+        // ------------------------------------------------------------------ ferramentas
+
+        private void UseTool(ItemDefinition item)
+        {
+            if (!config.TryGet(item.ToolType, out var entry))
                 return;
 
             var cell = selector.TargetCell;
@@ -86,8 +124,7 @@ namespace Enxada.Player
 
                 case ToolUseKind.Rejected:
                     Lock(RejectedLockSeconds);
-                    if (ServiceLocator.TryGet<IToastService>(out var toast))
-                        toast.Show(_texts.Get(outcome.MessageKey));
+                    ShowMessage(outcome.MessageKey);
                     return;
 
                 case ToolUseKind.Used:
@@ -122,6 +159,14 @@ namespace Enxada.Player
             return ServiceLocator.TryGet<ITileToolHandler>(out var handler)
                 ? handler.TryUse(tool, tier, new CellPosition(cell.x, cell.y))
                 : ToolUseOutcome.None;
+        }
+
+        // ------------------------------------------------------------------ feedback
+
+        private void ShowMessage(string key)
+        {
+            if (ServiceLocator.TryGet<IToastService>(out var toast))
+                toast.Show(_texts.Get(key));
         }
 
         private void Lock(float seconds)

@@ -8,6 +8,11 @@ namespace Enxada.Calendar
     {
         [SerializeField] private Gradient lightColor;
 
+        [Tooltip("Cor que multiplica a luz nos dias de chuva (mais escura e azulada).")]
+        [SerializeField] private Color rainTint = new Color(0.72f, 0.78f, 0.88f, 1f);
+
+        public Color RainTint => rainTint;
+
         public Color Evaluate(float dayProgress) =>
             lightColor == null ? Color.white : lightColor.Evaluate(Mathf.Clamp01(dayProgress));
 

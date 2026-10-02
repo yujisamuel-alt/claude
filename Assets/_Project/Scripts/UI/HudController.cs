@@ -10,15 +10,20 @@ namespace Enxada.UI
     {
         [SerializeField] private TMP_Text timeLabel;
         [SerializeField] private TMP_Text dateLabel;
+        [SerializeField] private TMP_Text weatherLabel;
         [SerializeField] private ToastView toast;
 
         private GameClock _clock;
+        private WeatherModel _weather;
         private ITextProvider _texts;
 
         private void Start()
         {
             _clock = ServiceLocator.Get<GameClock>();
             _texts = ServiceLocator.Get<ITextProvider>();
+
+            if (ServiceLocator.TryGet(out _weather))
+                _weather.Changed += Refresh;
 
             _clock.Changed += Refresh;
             _clock.LateWarning += OnLateWarning;
@@ -28,6 +33,9 @@ namespace Enxada.UI
 
         private void OnDestroy()
         {
+            if (_weather != null)
+                _weather.Changed -= Refresh;
+
             if (_clock == null)
                 return;
 
@@ -45,6 +53,9 @@ namespace Enxada.UI
                 _texts.Get(TextKeys.WeekdayShort(date.Weekday)),
                 date.Day,
                 _texts.Get(TextKeys.Season(date.Season)));
+
+            if (weatherLabel != null && _weather != null)
+                weatherLabel.text = _texts.Get(_weather.IsRainingToday ? "weather.rainy" : "weather.sunny");
         }
 
         private void OnLateWarning() => toast.Show(_texts.Get("toast.late"));

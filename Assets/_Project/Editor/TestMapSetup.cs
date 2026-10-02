@@ -163,6 +163,7 @@ namespace Enxada.EditorTools
         {
             public Tilemap Ground;
             public Tilemap Soil;
+            public Tilemap Crops;
             public Tilemap Obstacles;
             public TileBase Grass;
             public TileBase Dirt;
@@ -179,6 +180,7 @@ namespace Enxada.EditorTools
             // Ordem de desenho: chão < terra arada < obstáculos < objetos do sítio (2) < itens (3) < jogador (10).
             var ground = CreateTilemap(grid.transform, "Ground", 0);
             var soil = CreateTilemap(grid.transform, "Soil", 1);
+            var crops = CreateTilemap(grid.transform, "Crops", 2);
             var obstacles = CreateTilemap(grid.transform, "Obstacles", 2);
 
             var obstaclesGo = obstacles.gameObject;
@@ -200,7 +202,7 @@ namespace Enxada.EditorTools
                     obstacles.SetTile(cell, obstacle);
             }
 
-            return new MapLayers { Ground = ground, Soil = soil, Obstacles = obstacles, Grass = grass, Dirt = dirt, Water = water };
+            return new MapLayers { Ground = ground, Soil = soil, Crops = crops, Obstacles = obstacles, Grass = grass, Dirt = dirt, Water = water };
         }
 
         // Só a borda do mapa e a lagoa ficam no tilemap. Mato, galhos, pedras e árvores do sítio
@@ -254,7 +256,7 @@ namespace Enxada.EditorTools
             var swing = swingGo.AddComponent<SpriteRenderer>();
             swing.sortingOrder = 11;
 
-            var toolUser = go.AddComponent<ToolUser>();
+            var toolUser = go.AddComponent<ItemUser>();
             var toolSo = new SerializedObject(toolUser);
             toolSo.FindProperty("config").objectReferenceValue = FarmSetup.EnsureToolConfig();
             toolSo.FindProperty("selector").objectReferenceValue = selector;
@@ -275,6 +277,7 @@ namespace Enxada.EditorTools
             farmSo.FindProperty("grid").objectReferenceValue = grid;
             farmSo.FindProperty("ground").objectReferenceValue = layers.Ground;
             farmSo.FindProperty("soil").objectReferenceValue = layers.Soil;
+            farmSo.FindProperty("crops").objectReferenceValue = layers.Crops;
             farmSo.FindProperty("obstacles").objectReferenceValue = layers.Obstacles;
             farmSo.FindProperty("tilledTile").objectReferenceValue = FarmSetup.TilledTile();
             farmSo.FindProperty("wateredTile").objectReferenceValue = FarmSetup.WateredTile();
@@ -295,6 +298,11 @@ namespace Enxada.EditorTools
             fieldSo.FindProperty("clearingMin").vector2IntValue = new Vector2Int(Spawn.x - 5, Spawn.y - 5);
             fieldSo.FindProperty("clearingMax").vector2IntValue = new Vector2Int(Spawn.x + 5, Spawn.y + 5);
             fieldSo.ApplyModifiedPropertiesWithoutUndo();
+
+            var debugKeys = farmGo.AddComponent<FarmDebugKeys>();
+            var debugSo = new SerializedObject(debugKeys);
+            debugSo.FindProperty("farm").objectReferenceValue = farm;
+            debugSo.ApplyModifiedPropertiesWithoutUndo();
         }
 
         private static void BuildWell()
@@ -324,7 +332,11 @@ namespace Enxada.EditorTools
                 ("lettuce", 4, ItemQuality.Silver, new Vector2(21.5f, 15.5f)),
                 ("lettuce", 2, ItemQuality.Gold, new Vector2(20.5f, 16.5f)),
                 ("corn", 3, ItemQuality.Normal, new Vector2(25.5f, 21.5f)),
-                ("axe", 1, ItemQuality.Normal, new Vector2(23.5f, 21.5f))
+                ("axe", 1, ItemQuality.Normal, new Vector2(23.5f, 21.5f)),
+                ("cassava_seed", 5, ItemQuality.Normal, new Vector2(25.5f, 14.5f)),
+                ("bean_seed", 5, ItemQuality.Normal, new Vector2(26.5f, 14.5f)),
+                ("corn_seed", 5, ItemQuality.Normal, new Vector2(27.5f, 14.5f)),
+                ("strawberry_seed", 5, ItemQuality.Normal, new Vector2(28.5f, 14.5f))
             };
 
             var so = new SerializedObject(spawner);

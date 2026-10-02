@@ -33,6 +33,7 @@ namespace Enxada.EditorTools
 
             var calendar = go.AddComponent<CalendarInstaller>();
             Wire(calendar, "clockConfig", clockConfig);
+            Wire(calendar, "weatherConfig", FarmSetup.EnsureWeatherConfig());
 
             var database = ItemSetup.EnsureDatabase();
             var inventoryConfig = ItemSetup.EnsureConfig(database);
@@ -46,6 +47,7 @@ namespace Enxada.EditorTools
 
             var farming = go.AddComponent<FarmingInstaller>();
             Wire(farming, "config", FarmSetup.EnsureFarmingConfig());
+            Wire(farming, "cropDatabase", FarmSetup.EnsureCropDatabase(database));
 
             var energyController = go.AddComponent<EnergyController>();
             Wire(energyController, "passOutRequested", FarmSetup.EnsurePassOutChannel());

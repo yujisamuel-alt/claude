@@ -61,6 +61,41 @@ namespace Enxada.EditorTools
             Disc(px, s, 6.5f, 8f, 2.5f, new Color32(168, 168, 174, 255));
         });
 
+        private const string CropsFolder = "Assets/_Project/Art/Sprites/Crops";
+
+        /// <summary>Sprite de um estágio de planta: 0 = semente na terra, o último = planta madura com o produto à mostra.</summary>
+        public static Sprite CropStage(string cropId, int stage, int lastStage, Color32 leaf, Color32 produce) =>
+            EnsureSpriteIn(CropsFolder, $"{cropId}_{stage}", (px, s) =>
+            {
+                Fill(px, Clear);
+                if (stage == 0)
+                {
+                    Disc(px, s, 8f, 5f, 1.8f, new Color32(96, 64, 38, 255)); // montinho de terra com a semente
+                    Disc(px, s, 8f, 5.5f, 0.9f, leaf);
+                    return;
+                }
+
+                var height = 3 + (int)Math.Round(stage * 10.0 / lastStage);
+                Line(px, s, 8, 2, 8, 2 + height, leaf);
+                Line(px, s, 7, 2, 7, 2 + height - 1, leaf);
+
+                var mid = 2 + height / 2;
+                Line(px, s, 8, mid, 5, mid + 2, leaf);
+                Line(px, s, 8, mid, 11, mid + 2, leaf);
+                if (stage >= 2)
+                {
+                    Line(px, s, 8, mid + 2, 4, mid + 4, leaf);
+                    Line(px, s, 8, mid + 2, 12, mid + 4, leaf);
+                }
+
+                if (stage == lastStage)
+                {
+                    Disc(px, s, 5.5f, 5f, 2.2f, produce);
+                    Disc(px, s, 10.5f, 7f, 2.2f, produce);
+                    Disc(px, s, 8f, 11f, 2.2f, produce);
+                }
+            });
+
         public static Sprite SoilTilled() => EnsureSprite("soil_tilled", (px, s) =>
         {
             Fill(px, new Color32(112, 76, 46, 255));

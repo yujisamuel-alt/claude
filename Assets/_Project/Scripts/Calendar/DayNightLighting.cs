@@ -21,6 +21,7 @@ namespace Enxada.Calendar
         [SerializeField] private Component globalLight;
 
         private GameClock _clock;
+        private WeatherModel _weather;
         private PropertyInfo _colorProperty;
         private float _lastProgress = -1f;
 
@@ -42,8 +43,20 @@ namespace Enxada.Calendar
             }
 
             _clock = ServiceLocator.Get<GameClock>();
+            if (ServiceLocator.TryGet(out _weather))
+                _weather.Changed += OnWeatherChanged;
+
             Apply(_clock.DayProgress);
         }
+
+        private void OnDestroy()
+        {
+            if (_weather != null)
+                _weather.Changed -= OnWeatherChanged;
+        }
+
+        // Força a cor a ser reaplicada no próximo Update (chuva começou ou parou).
+        private void OnWeatherChanged() => _lastProgress = -1f;
 
         private void Update()
         {
@@ -57,7 +70,11 @@ namespace Enxada.Calendar
         private void Apply(float progress)
         {
             _lastProgress = progress;
-            _colorProperty.SetValue(globalLight, config.Evaluate(progress));
+            var color = config.Evaluate(progress);
+            if (_weather != null && _weather.IsRainingToday)
+                color *= config.RainTint;
+
+            _colorProperty.SetValue(globalLight, color);
         }
     }
 }

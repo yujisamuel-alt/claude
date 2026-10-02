@@ -36,11 +36,13 @@ namespace Enxada.EditorTools
 
             // HUD (canto superior direito)
             var hudPanel = CreatePanel(root, "HudPanel", new Vector2(1f, 1f), new Vector2(-12f, -12f),
-                new Vector2(210f, 64f));
+                new Vector2(210f, 88f));
             var timeLabel = CreateText(hudPanel, "TimeLabel", 30f, TextAlignmentOptions.Center,
-                new Vector2(0f, 0.45f), new Vector2(1f, 1f));
+                new Vector2(0f, 0.55f), new Vector2(1f, 1f));
             var dateLabel = CreateText(hudPanel, "DateLabel", 17f, TextAlignmentOptions.Center,
-                new Vector2(0f, 0f), new Vector2(1f, 0.5f));
+                new Vector2(0f, 0.28f), new Vector2(1f, 0.55f));
+            var weatherLabel = CreateText(hudPanel, "WeatherLabel", 15f, TextAlignmentOptions.Center,
+                new Vector2(0f, 0f), new Vector2(1f, 0.28f));
 
             // Aviso (parte de baixo, centralizado)
             var toastPanel = CreatePanel(root, "Toast", new Vector2(0.5f, 0f), new Vector2(0f, 70f),
@@ -59,6 +61,7 @@ namespace Enxada.EditorTools
             {
                 so.FindProperty("timeLabel").objectReferenceValue = timeLabel;
                 so.FindProperty("dateLabel").objectReferenceValue = dateLabel;
+                so.FindProperty("weatherLabel").objectReferenceValue = weatherLabel;
                 so.FindProperty("toast").objectReferenceValue = toast;
             });
 

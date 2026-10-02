@@ -88,7 +88,7 @@ Pós-MVP (só deixar a arquitetura preparada): pesca, mina, animais, cozinha, up
 | 2 | Relógio, calendário, luz do dia, dormir | ✅ Código pronto; aguardando validação no editor |
 | 3 | Inventário e barra rápida | ✅ Código pronto; aguardando validação no editor |
 | 4 | Ferramentas e energia | ✅ Código pronto; aguardando validação no editor |
-| 5 | Plantio, colheita e clima simples | ⏳ |
+| 5 | Plantio, colheita e clima simples | ✅ Código pronto; aguardando validação no editor |
 | 6 | Baú de entregas, dinheiro e Venda da Dona Cida | ⏳ |
 | 7 | Save/Load e menu principal | ⏳ |
 | 8a | Diálogos, amizade e presentes | ⏳ |
@@ -144,7 +144,7 @@ Pós-MVP (só deixar a arquitetura preparada): pesca, mina, animais, cozinha, up
 ### Etapa 4: o que existe
 - `CellPosition` agora mora no Core (usado por Player e Farming). `ToolType`, `ToolRules`, `ToolUseOutcome` (None/Used/UsedFree/Rejected), `ITileToolHandler`, `IToolTarget`, `IToastService` no Core.
 - Player: `EnergyModel`/`EnergySettings` (puro: 270, desmaio abaixo de -15, lento com 0 ou menos), `EnergyConfig`, `ToolConfig` (custo e duração por ferramenta),
-  `PlayerInstaller`, `EnergyController` (recupera ao virar o dia e pede desmaio), `ToolUser` (usa a ferramenta selecionada no tile alvo: objetos primeiro, depois o chão).
+  `PlayerInstaller`, `EnergyController` (recupera ao virar o dia e pede desmaio), `ItemUser` (usa o item selecionado no tile alvo; ferramentas e sementes).
 - `ItemDefinition` ganhou `ToolType` e `ToolTier` (0 = básica; cobre/ferro/ouro virão depois e reduzem o custo de energia).
 - Farming: `FarmGrid` (terra arada/regada/ocupada), `WateringCanState` (capacidade 40), `FarmTilemapController` (arar, regar, encher na água, virada do dia),
   `ResourceNode` + `ResourceNodeDefinition` (mato, galho, pedra, árvore), `FarmObjectField` (espalha e faz reaparecer aos poucos), `WaterSource` (poço), `FarmingInstaller`.
@@ -153,3 +153,16 @@ Pós-MVP (só deixar a arquitetura preparada): pesca, mina, animais, cozinha, up
 - Decisões (placeholders, mude no Inspector): energia só é gasta quando a ferramenta **funciona** (errar o alvo não custa); dormir recupera tudo e desmaiar recupera 50%;
   terra arada sem planta volta a ser grama com 10% de chance por dia; custos: enxada 3, regador 2, foice 2, machado 6, picareta 5.
 - Ainda não: chuva e plantas (Etapa 5), comer para recuperar energia (`EnergyModel.Restore` pronto), perda de dinheiro ao desmaiar (Etapa 6), save da terra e dos objetos (Etapa 7).
+
+### Etapa 5: o que existe
+- Calendar/Logic: `Weather`/`WeatherModel` (hoje e previsão de amanhã; começa sempre com sol), `WeatherSettings` (chance de chuva por estação: 20% Primavera, 15% Verão, 20% Outono, 0 Inverno — placeholders), `SeasonFlags`.
+  `WeatherConfig` (SO). O `CalendarInstaller` vira o clima junto com o relógio **antes** de todos os outros ouvintes de `DayEnded`, então a fazenda já vê o clima do novo dia.
+- Farming/Logic: `CropSpec` (dias por estágio, rebrota, estações, itens), `ICropCatalog`, `FarmGrid` agora guarda a planta em cada tile: `TryPlant`, `TryHarvest`, `AdvanceDay`.
+  Ordem da virada do dia: (1) planta fora da estação nova morre; (2) planta regada cresce 1 dia; (3) terra sem planta pode voltar a grama; (4) terra seca (ou fica regada se vai chover).
+  Regra confirmada: plantou no dia 1 uma cultura de 4 dias, regando todo dia, colhe no dia 5. Colheita com rebrota volta `RegrowDays` dias antes de amadurecer (`DaysGrown = Total - Regrow`).
+- Dados: `CropDefinition` (SO: sementes, colheita, `stageDays`, `regrowDays`, estações, sprites = estágios + 1), `CropDatabase`. As 5 culturas da Primavera vêm da tabela (dias, rebrota); a divisão dos dias em estágios é placeholder.
+- `FarmTilemapController` agora implementa também `ISeedPlanter`: planta com a semente selecionada, colhe com a foice (vai direto para a mochila; o excesso cai no chão), desenha as plantas num tilemap `Crops` (tiles criados em runtime).
+- `ItemUser` (renomeado de `ToolUser`): semente selecionada + clique = planta e gasta a semente (sem gastar energia).
+- Chuva: rega tudo na virada do dia (a planta cresce na noite do dia chuvoso); luz mais escura e azulada (`DayNightConfig.RainTint`); HUD mostra "Ensolarado/Chuvoso".
+- Atalhos de teste novos (editor): **F5** rega todas as terras aradas · **F6** faz chover amanhã.
+- Ainda não: previsão na TV (Etapa 11), partículas de chuva (Etapa 11), qualidade prata/ouro na colheita, plantas mortas visíveis (hoje a planta some), save das plantas (Etapa 7).

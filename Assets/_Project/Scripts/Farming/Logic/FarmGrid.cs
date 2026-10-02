@@ -1,28 +1,75 @@
 using System;
 using System.Collections.Generic;
+using Enxada.Calendar;
 using Enxada.Core;
 
 namespace Enxada.Farming
 {
+    /// <summary>Uma planta: qual cultura e quantos dias regados ela já cresceu.</summary>
+    public struct CropState
+    {
+        public string CropId;
+        public int DaysGrown;
+
+        public bool IsEmpty => string.IsNullOrEmpty(CropId);
+    }
+
     /// <summary>Estado de um tile arado.</summary>
     public struct FarmTile
     {
         public bool Watered;
+        public CropState Crop;
 
-        /// <summary>Tem planta (Etapa 5). Terra ocupada não volta a ser grama.</summary>
-        public bool Occupied;
+        public bool HasCrop => !Crop.IsEmpty;
+    }
+
+    public enum PlantResult
+    {
+        Planted,
+        NotTilled,
+        Occupied,
+        WrongSeason
+    }
+
+    public readonly struct HarvestResult
+    {
+        public readonly bool Success;
+        public readonly string ItemId;
+        public readonly int Amount;
+
+        /// <summary>Falso nas plantas que rebrotam: a planta continua lá, crescendo de novo.</summary>
+        public readonly bool CropRemoved;
+
+        public HarvestResult(bool success, string itemId, int amount, bool cropRemoved)
+        {
+            Success = success;
+            ItemId = itemId;
+            Amount = amount;
+            CropRemoved = cropRemoved;
+        }
+
+        public static HarvestResult Failed => new HarvestResult(false, null, 0, false);
     }
 
     /// <summary>O que mudou na virada do dia, para a fazenda redesenhar os tiles.</summary>
     public sealed class FarmDayResult
     {
+        /// <summary>Terra arada abandonada que voltou a ser grama.</summary>
         public readonly List<CellPosition> Reverted = new List<CellPosition>();
+
+        /// <summary>Plantas que morreram por estarem fora da estação.</summary>
+        public readonly List<CellPosition> Died = new List<CellPosition>();
+
+        /// <summary>Plantas que cresceram esta noite.</summary>
+        public readonly List<CellPosition> Grown = new List<CellPosition>();
+
+        /// <summary>Todos os tiles arados que continuam existindo.</summary>
         public readonly List<CellPosition> Refreshed = new List<CellPosition>();
     }
 
     /// <summary>
-    /// Terra arada do sítio: quais tiles foram arados, regados ou estão ocupados por plantas.
-    /// Só guarda o estado; saber se o chão é "arável" é papel da cena (tilemaps).
+    /// A terra do sítio: tiles arados, se estão regados e que planta têm. Só guarda estado e aplica as
+    /// regras; saber se o chão é "arável" é papel da cena (tilemaps).
     /// </summary>
     public sealed class FarmGrid
     {
@@ -37,7 +84,11 @@ namespace Enxada.Farming
 
         public bool IsWatered(CellPosition cell) => _tiles.TryGetValue(cell, out var tile) && tile.Watered;
 
-        public bool IsOccupied(CellPosition cell) => _tiles.TryGetValue(cell, out var tile) && tile.Occupied;
+        /// <summary>Tem planta (terra ocupada não volta a ser grama).</summary>
+        public bool IsOccupied(CellPosition cell) => _tiles.TryGetValue(cell, out var tile) && tile.HasCrop;
+
+        public CropState GetCrop(CellPosition cell) =>
+            _tiles.TryGetValue(cell, out var tile) ? tile.Crop : default;
 
         /// <summary>Ara o tile. Falso se já estava arado.</summary>
         public bool Till(CellPosition cell)
@@ -62,23 +113,52 @@ namespace Enxada.Farming
             return true;
         }
 
-        public bool SetOccupied(CellPosition cell, bool occupied)
+        public PlantResult TryPlant(CellPosition cell, CropSpec spec, Season season)
         {
-            if (!_tiles.TryGetValue(cell, out var tile) || tile.Occupied == occupied)
-                return false;
+            if (spec == null)
+                throw new ArgumentNullException(nameof(spec));
+            if (!_tiles.TryGetValue(cell, out var tile))
+                return PlantResult.NotTilled;
+            if (tile.HasCrop)
+                return PlantResult.Occupied;
+            if (!spec.GrowsIn(season))
+                return PlantResult.WrongSeason;
 
-            tile.Occupied = occupied;
+            tile.Crop = new CropState { CropId = spec.Id, DaysGrown = 0 };
             _tiles[cell] = tile;
             TileChanged?.Invoke(cell);
-            return true;
+            return PlantResult.Planted;
         }
 
         /// <summary>
-        /// Vira o dia: a terra seca (ou fica regada se choveu) e a terra arada sem planta pode voltar
-        /// a ser grama, com a chance dada. <paramref name="random"/> devolve valores em [0, 1).
+        /// Colhe a planta madura. Se a cultura rebrota, a planta volta alguns dias no crescimento
+        /// (e fica a RegrowDays de amadurecer de novo); senão, sai do tile e a terra continua arada.
         /// </summary>
-        public FarmDayResult AdvanceDay(bool rained, Func<double> random, double revertChance)
+        public HarvestResult TryHarvest(CellPosition cell, ICropCatalog crops)
         {
+            if (!_tiles.TryGetValue(cell, out var tile) || !tile.HasCrop || !crops.TryGet(tile.Crop.CropId, out var spec)
+                || !spec.IsMature(tile.Crop.DaysGrown))
+                return HarvestResult.Failed;
+
+            var removed = !spec.Regrows;
+            tile.Crop = removed
+                ? default
+                : new CropState { CropId = spec.Id, DaysGrown = spec.TotalDays - spec.RegrowDays };
+            _tiles[cell] = tile;
+            TileChanged?.Invoke(cell);
+            return new HarvestResult(true, spec.HarvestItemId, spec.HarvestAmount, removed);
+        }
+
+        /// <summary>
+        /// Vira o dia, nesta ordem: (1) cada planta fora da estação nova morre; (2) as regadas crescem um dia;
+        /// (3) terra arada sem planta pode voltar a ser grama; (4) a terra seca, ou fica regada se vai chover.
+        /// <paramref name="random"/> devolve valores em [0, 1).
+        /// </summary>
+        public FarmDayResult AdvanceDay(ICropCatalog crops, Season newSeason, bool rained, Func<double> random,
+            double revertChance)
+        {
+            if (crops == null)
+                throw new ArgumentNullException(nameof(crops));
             if (random == null)
                 throw new ArgumentNullException(nameof(random));
 
@@ -88,7 +168,24 @@ namespace Enxada.Farming
             foreach (var cell in cells)
             {
                 var tile = _tiles[cell];
-                if (!tile.Occupied && random() < revertChance)
+                var diedTonight = false;
+
+                if (tile.HasCrop)
+                {
+                    if (!crops.TryGet(tile.Crop.CropId, out var spec) || !spec.GrowsIn(newSeason))
+                    {
+                        tile.Crop = default;
+                        diedTonight = true;
+                        result.Died.Add(cell);
+                    }
+                    else if (tile.Watered && !spec.IsMature(tile.Crop.DaysGrown))
+                    {
+                        tile.Crop.DaysGrown++;
+                        result.Grown.Add(cell);
+                    }
+                }
+
+                if (!tile.HasCrop && !diedTonight && random() < revertChance)
                 {
                     _tiles.Remove(cell);
                     result.Reverted.Add(cell);
