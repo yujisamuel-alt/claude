@@ -69,7 +69,8 @@ Pós-MVP (só deixar a arquitetura preparada): pesca, mina, animais, cozinha, up
 - Clima simples (sol/chuva por chance configurável) na Etapa 5; previsão na TV na Etapa 11.
 - Etapa 8 dividida em 8a (diálogo + amizade + presentes) e 8b (agenda + pathfinding).
 - Crescimento: semente plantada no dia 1 com "4 dias" fica pronta no dia 5 (regada todos os dias).
-- **Pendente:** o que acontece no fim do dia 28 (tela de fim de demo vs. Verão sem culturas).
+- Fim do MVP: ao dormir no dia 28 da Primavera aparece uma **tela de fim da demo** (resumo da estação).
+  O dia 28→Verão não é jogável no MVP; a lógica do calendário continua genérica para as 4 estações.
 
 ## Status do roadmap
 | Etapa | Entrega | Status |
