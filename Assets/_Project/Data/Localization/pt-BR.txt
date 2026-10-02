@@ -1,0 +1,40 @@
+# Enxada & Encrenca - textos em português do Brasil
+# Formato: chave = texto   (\n = quebra de linha)
+# Nenhum texto visível ao jogador fica no código: tudo passa por aqui.
+# Na Etapa 10 esta tabela migra para o Unity Localization e ganha a versão EN.
+
+currency.name = Tostões
+
+# Calendário
+season.spring = Primavera
+season.summer = Verão
+season.autumn = Outono
+season.winter = Inverno
+
+weekday.monday = Segunda-feira
+weekday.tuesday = Terça-feira
+weekday.wednesday = Quarta-feira
+weekday.thursday = Quinta-feira
+weekday.friday = Sexta-feira
+weekday.saturday = Sábado
+weekday.sunday = Domingo
+
+weekday.monday.short = Seg
+weekday.tuesday.short = Ter
+weekday.wednesday.short = Qua
+weekday.thursday.short = Qui
+weekday.friday.short = Sex
+weekday.saturday.short = Sáb
+weekday.sunday.short = Dom
+
+# HUD: {0} = dia da semana, {1} = dia do mês, {2} = estação
+hud.date = {0} {1} de {2}
+
+# Avisos
+toast.late = Tá ficando tarde... melhor ir pra cama!
+toast.passout = Você apagou de cansaço e acordou em casa.
+
+# Cama e diálogos
+sleep.confirm = Dormir agora e encerrar o dia?
+ui.yes = Sim
+ui.no = Não

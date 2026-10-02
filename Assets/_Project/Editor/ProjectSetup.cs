@@ -60,6 +60,14 @@ namespace Enxada.EditorTools
         [MenuItem("Enxada/Setup/Passos/2. Render Pipeline 2D (URP)", priority = 21)]
         public static void ConfigureRenderPipelineMenu() => ConfigureRenderPipeline();
 
+        [MenuItem("Enxada/Setup/Passos/4. Regerar cena Boot", priority = 23)]
+        public static void RebuildBootSceneMenu()
+        {
+            if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo())
+                return;
+            RebuildBootScene(EnsureGameConfig());
+        }
+
         [MenuItem("Enxada/Setup/Passos/3. Cenas Boot e MainMenu", priority = 22)]
         public static void CreateScenesMenu()
         {
@@ -123,13 +131,7 @@ namespace Enxada.EditorTools
         {
             EnsureFolder(ScenesFolder);
 
-            CreateSceneIfMissing(BootScenePath, () =>
-            {
-                var bootstrap = new GameObject("GameBootstrap").AddComponent<GameBootstrap>();
-                var serialized = new SerializedObject(bootstrap);
-                serialized.FindProperty("config").objectReferenceValue = config;
-                serialized.ApplyModifiedPropertiesWithoutUndo();
-            });
+            RebuildBootScene(config);
 
             CreateSceneIfMissing(MainMenuScenePath, () => CreateCamera());
 
@@ -143,6 +145,21 @@ namespace Enxada.EditorTools
             EditorSceneManager.OpenScene(BootScenePath);
             Debug.Log("[Setup] Build Settings: Boot (0), MainMenu (1).");
         }
+
+        /// <summary>
+        /// A cena Boot é gerada: contém só o GameBootstrap com os instaladores de serviços,
+        /// que crescem a cada etapa. Por isso é recriada toda vez (não edite à mão).
+        /// </summary>
+        public static void RebuildBootScene(GameConfig config)
+        {
+            EnsureFolder(ScenesFolder);
+            var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+            BootstrapBuilder.Build(config, true, out _);
+            EditorSceneManager.SaveScene(scene, BootScenePath);
+            Debug.Log($"[Setup] Cena Boot (re)criada em {BootScenePath}");
+        }
+
+        public static GameConfig LoadOrCreateGameConfig() => EnsureGameConfig();
 
         private static void CreateSceneIfMissing(string path, System.Action populate)
         {

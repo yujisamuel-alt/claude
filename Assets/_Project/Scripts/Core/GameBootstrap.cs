@@ -12,6 +12,12 @@ namespace Enxada.Core
     {
         [SerializeField] private GameConfig config;
 
+        [Tooltip("Instaladores de serviços de cada módulo, na ordem em que devem rodar.")]
+        [SerializeField] private ServiceInstaller[] installers;
+
+        [Tooltip("Desligue em cenas de teste que já contêm o seu próprio Bootstrap.")]
+        [SerializeField] private bool loadFirstScene = true;
+
         private static bool _initialized;
 
         // Garante estado limpo mesmo com "Enter Play Mode Options" (sem domain reload).
@@ -45,14 +51,23 @@ namespace Enxada.Core
 
         private void Start()
         {
-            if (!string.IsNullOrEmpty(config.FirstSceneName))
+            if (loadFirstScene && !string.IsNullOrEmpty(config.FirstSceneName))
                 SceneManager.LoadScene(config.FirstSceneName);
         }
 
         private void RegisterServices()
         {
             ServiceLocator.Register(config);
-            // Próximas etapas registram aqui: relógio, inventário, save...
+            ServiceLocator.Register(new GameplayPause());
+
+            if (installers == null)
+                return;
+
+            foreach (var installer in installers)
+            {
+                if (installer != null)
+                    installer.Install();
+            }
         }
     }
 }

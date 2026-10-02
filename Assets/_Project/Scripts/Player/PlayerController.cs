@@ -1,3 +1,4 @@
+using Enxada.Core;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -20,6 +21,7 @@ namespace Enxada.Player
         private Rigidbody2D _body;
         private InputAction _move;
         private Vector2 _velocity;
+        private GameplayPause _pause;
 
         public FacingDirection Facing { get; private set; } = FacingDirection.Down;
         public bool IsMoving { get; private set; }
@@ -47,6 +49,8 @@ namespace Enxada.Player
             ApplyFacingSprite();
         }
 
+        private void Start() => ServiceLocator.TryGet(out _pause);
+
         private void OnEnable()
         {
             if (inputActions != null)
@@ -63,7 +67,8 @@ namespace Enxada.Player
 
         private void Update()
         {
-            var raw = InputEnabled ? _move.ReadValue<Vector2>() : Vector2.zero;
+            var canMove = InputEnabled && (_pause == null || !_pause.IsPaused);
+            var raw = canMove ? _move.ReadValue<Vector2>() : Vector2.zero;
             var result = MovementInput.Resolve(raw.x, raw.y, config.AllowDiagonal, config.Deadzone, Facing);
 
             _velocity = new Vector2(result.X, result.Y) * config.MoveSpeed;

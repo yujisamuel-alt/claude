@@ -5,7 +5,8 @@
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner",
         "Enxada.Core",
-        "Enxada.Player"
+        "Enxada.Player",
+        "Enxada.Calendar"
     ],
     "includePlatforms": [
         "Editor"

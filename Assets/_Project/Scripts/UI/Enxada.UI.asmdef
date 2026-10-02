@@ -2,7 +2,11 @@
     "name": "Enxada.UI",
     "rootNamespace": "Enxada.UI",
     "references": [
-        "Enxada.Core"
+        "Enxada.Core",
+        "Enxada.Calendar",
+        "Unity.TextMeshPro",
+        "UnityEngine.UI",
+        "Unity.InputSystem"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

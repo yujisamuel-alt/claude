@@ -61,6 +61,14 @@ namespace Enxada.EditorTools
             Disc(px, s, 6.5f, 8f, 2.5f, new Color32(168, 168, 174, 255));
         });
 
+        public static Sprite Bed() => EnsureSprite("bed", (px, s) =>
+        {
+            Fill(px, Clear);
+            Rect(px, s, 1, 1, 15, 15, new Color32(120, 78, 44, 255));   // moldura de madeira
+            Rect(px, s, 2, 2, 14, 11, new Color32(196, 70, 70, 255));   // cobertor
+            Rect(px, s, 2, 11, 14, 14, new Color32(240, 240, 240, 255)); // travesseiro
+        });
+
         public static Sprite Highlight() => EnsureSprite("tile_highlight", (px, s) =>
         {
             Fill(px, new Color32(255, 235, 80, 48));

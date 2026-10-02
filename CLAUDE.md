@@ -25,7 +25,8 @@ Pós-MVP (só deixar a arquitetura preparada): pesca, mina, animais, cozinha, up
 
 ## Convenções de código
 - Código em **inglês**; comentários e mensagens para o diretor em **português**.
-- Texto visível ao jogador vai para tabelas de **Localization** (PT-BR já a partir da Etapa 2; EN na Etapa 10). Nunca hardcoded.
+- Texto visível ao jogador vem de **chaves** (`ITextProvider`), nunca hardcoded. Hoje: tabela `Data/Localization/pt-BR.txt`
+  (formato `chave = texto`). Na Etapa 10 entra o pacote Unity Localization atrás da mesma interface, com o EN.
 - Namespaces / assemblies (um `.asmdef` por módulo em `Assets/_Project/Scripts/<Módulo>/`):
   `Enxada.Core`, `Enxada.Calendar`, `Enxada.Farming`, `Enxada.Inventory`, `Enxada.Player`,
   `Enxada.NPC`, `Enxada.UI`, `Enxada.Save`, `Enxada.EditorTools`, `Enxada.Tests.EditMode`, `Enxada.Tests.PlayMode`.
@@ -33,6 +34,11 @@ Pós-MVP (só deixar a arquitetura preparada): pesca, mina, animais, cozinha, up
   - Classe principal não tem o mesmo nome do namespace: `InventoryModel`, `PlayerController`.
 - Comunicação entre sistemas: eventos C# ou `EventChannel` (ScriptableObject). Sem referências diretas entre módulos.
   Serviços globais são registrados no `ServiceLocator` pelo `GameBootstrap` (cena Boot). Evite singletons.
+  Cada módulo tem um `ServiceInstaller` (ex.: `CalendarInstaller`) que o Bootstrap chama; assim o Core não conhece os outros módulos.
+  Serviços de cena (fader, caixa Sim/Não) usam `ServiceLocator.Replace` no Awake e `Unregister(instância)` no OnDestroy.
+- Pausa do mundo: `GameplayPause` (serviço). Diálogos/menus/transições fazem `Push(this)` e `Pop(this)`;
+  o `ClockDriver` e o `PlayerController` respeitam. Soltar a pausa 1 frame depois de confirmar com o gamepad (evita reabrir).
+- Interação: qualquer objeto com `IInteractable` + `Collider2D` no tile alvo é acionado pelo `PlayerInteractor`.
 - Dados fora do código: itens, sementes, ferramentas, moradores, lojas, diálogos e balanceamento em ScriptableObjects
   (`Assets/_Project/Data/`). Nada de números mágicos.
 - Desempenho: nada de `Find`/`GetComponent` em `Update`, nem alocação por frame. Pooling para itens no chão e efeitos.
@@ -77,7 +83,7 @@ Pós-MVP (só deixar a arquitetura preparada): pesca, mina, animais, cozinha, up
 | --- | --- | --- |
 | 0 | Setup: CLAUDE.md, git, pacotes, pastas, asmdefs, cena Boot, menu `Enxada/Setup` | ✅ Código pronto; aguardando validação no editor |
 | 1 | Jogador, Input System, câmera Cinemachine, mapa de teste com colisão | ✅ Código pronto; aguardando validação no editor |
-| 2 | Relógio, calendário, luz do dia, dormir | ⏳ |
+| 2 | Relógio, calendário, luz do dia, dormir | ✅ Código pronto; aguardando validação no editor |
 | 3 | Inventário e barra rápida | ⏳ |
 | 4 | Ferramentas e energia | ⏳ |
 | 5 | Plantio, colheita e clima simples | ⏳ |
@@ -103,3 +109,16 @@ Pós-MVP (só deixar a arquitetura preparada): pesca, mina, animais, cozinha, up
   A cena TestMap é **regenerada a cada execução**; assets só são criados se não existirem (apague o prefab/tiles para recriar).
 - `Light2D` e `PixelPerfectCamera` são buscados por nome (assembly varia entre versões do URP). Cinemachine usa a API tipada 3.x.
 - Pendente de etapas futuras: animação andando/ferramenta (hoje só 1 sprite por direção), Rule Tiles, tela de rebinding (Etapa 10).
+
+### Etapa 2: o que existe
+- `Calendar/Logic` (puro, testado): `GameDate` (ano/estação/dia, dia da semana, `NextDay`), `ClockSettings`, `GameClock`
+  (blocos de 10 min a cada 7 s, aviso à 0h, para às 2h e avisa `PassOutReached`, `EndDay` avança a data), `PassOutPenalty` (10%, máx. 1.000), `ClockFormat`, `TextKeys`.
+- `Core/Logic`: `GameplayPause`, `ITextProvider` + `StringTable`, `IScreenFader`, `IConfirmDialog`; `ServiceLocator.Replace/Unregister(instância)`.
+- `ClockConfig` e `DayNightConfig` (SOs), `CalendarInstaller`, `ClockDriver`, `DayTransitionController` (fade → `EndDay` → acorda na cama → fade),
+  `SleepInteractable` (cama), `DayNightLighting` (cor da Global Light 2D pelo gradiente; usa reflexão na propriedade `color` da Light2D).
+- UI: `HudController` (hora, data, avisos), `ToastView`, `ScreenFader`, `ConfirmDialog` (Sim/Não); `EventSystem` com `InputSystemUIInputModule`.
+- Player: `PlayerInteractor`; `PlayerController` obedece a `GameplayPause`.
+- A perda de dinheiro ao desmaiar só é **calculada** (`PassOutPenalty`); é aplicada quando o dinheiro existir (Etapa 6). Energia (Etapa 4) idem.
+- Fim da Primavera: `DayTransitionController` dispara o canal `Data/Events/DemoEnded` ao dormir no dia 28; a tela de fim da demo vem na Etapa 6.
+- Cena **Boot** passa a ser regerada (`Enxada/Setup/Passos/4. Regerar cena Boot` ou ao criar o mapa de teste); a **TestMap** tem Bootstrap próprio.
+- Atalhos de teste na TestMap (só editor/dev build): **F2** velocidade 1x/20x · **F3** pula para 23:40 · **F4** dormir/encerrar o dia.

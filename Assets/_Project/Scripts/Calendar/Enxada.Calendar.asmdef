@@ -2,7 +2,8 @@
     "name": "Enxada.Calendar",
     "rootNamespace": "Enxada.Calendar",
     "references": [
-        "Enxada.Core"
+        "Enxada.Core",
+        "Unity.InputSystem"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
