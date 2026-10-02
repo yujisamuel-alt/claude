@@ -76,7 +76,7 @@ Pós-MVP (só deixar a arquitetura preparada): pesca, mina, animais, cozinha, up
 | Etapa | Entrega | Status |
 | --- | --- | --- |
 | 0 | Setup: CLAUDE.md, git, pacotes, pastas, asmdefs, cena Boot, menu `Enxada/Setup` | ✅ Código pronto; aguardando validação no editor |
-| 1 | Jogador, Input System, câmera Cinemachine, mapa de teste com colisão | ⏳ |
+| 1 | Jogador, Input System, câmera Cinemachine, mapa de teste com colisão | ✅ Código pronto; aguardando validação no editor |
 | 2 | Relógio, calendário, luz do dia, dormir | ⏳ |
 | 3 | Inventário e barra rápida | ⏳ |
 | 4 | Ferramentas e energia | ⏳ |
@@ -94,3 +94,12 @@ Pós-MVP (só deixar a arquitetura preparada): pesca, mina, animais, cozinha, up
   Se o editor do diretor for outro (ex.: 6000.3), ajustar o `manifest.json` conforme o Package Manager.
 - Input System: ao abrir o projeto a Unity pergunta se ativa o novo backend de input; responder **Yes**.
 - `EnxadaControls.inputactions`: mapas `Gameplay` e `UI`, esquemas Teclado&Mouse e Gamepad, barra rápida 1–0, `-`, `=`.
+
+### Etapa 1: o que existe
+- `Player/Logic`: `MovementInput` (4/8 direções, deadzone, analógico) e `TileTargeting` (tile à frente / sob o mouse com alcance). 28 testes no harness.
+- `PlayerController` (Rigidbody2D, lê `Gameplay/Move`), `TargetTileSelector` (`TargetCell` + evento `TargetChanged` para as próximas etapas), `PlayerConfig` (SO).
+- Menu `Enxada/Setup/Criar Mapa de Teste`: gera sprites/tiles placeholder, `PlayerConfig`, prefab `Player`, e a cena `Scenes/Dev/TestMap`
+  (Grid + Ground/Obstacles com colisão composta, Cinemachine com confiner, Pixel Perfect 320x180, Global Light 2D).
+  A cena TestMap é **regenerada a cada execução**; assets só são criados se não existirem (apague o prefab/tiles para recriar).
+- `Light2D` e `PixelPerfectCamera` são buscados por nome (assembly varia entre versões do URP). Cinemachine usa a API tipada 3.x.
+- Pendente de etapas futuras: animação andando/ferramenta (hoje só 1 sprite por direção), Rule Tiles, tela de rebinding (Etapa 10).

@@ -2,7 +2,8 @@
     "name": "Enxada.Player",
     "rootNamespace": "Enxada.Player",
     "references": [
-        "Enxada.Core"
+        "Enxada.Core",
+        "Unity.InputSystem"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

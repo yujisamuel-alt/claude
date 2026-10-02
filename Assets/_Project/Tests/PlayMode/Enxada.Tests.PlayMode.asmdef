@@ -3,7 +3,8 @@
     "rootNamespace": "Enxada.Tests",
     "references": [
         "UnityEngine.TestRunner",
-        "Enxada.Core"
+        "Enxada.Core",
+        "Enxada.Player"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
