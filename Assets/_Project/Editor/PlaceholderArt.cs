@@ -61,6 +61,61 @@ namespace Enxada.EditorTools
             Disc(px, s, 6.5f, 8f, 2.5f, new Color32(168, 168, 174, 255));
         });
 
+        public static Sprite SoilTilled() => EnsureSprite("soil_tilled", (px, s) =>
+        {
+            Fill(px, new Color32(112, 76, 46, 255));
+            for (var y = 0; y < s; y++)
+            for (var x = 0; x < s; x++)
+            {
+                if (y % 4 == 1) px[y * s + x] = new Color32(86, 56, 34, 255); // sulcos
+                else if (Hash(x, y, 3) % 13 == 0) px[y * s + x] = new Color32(132, 92, 58, 255);
+            }
+        });
+
+        public static Sprite SoilWatered() => EnsureSprite("soil_watered", (px, s) =>
+        {
+            Fill(px, new Color32(76, 52, 36, 255));
+            for (var y = 0; y < s; y++)
+            for (var x = 0; x < s; x++)
+            {
+                if (y % 4 == 1) px[y * s + x] = new Color32(54, 36, 26, 255);
+                else if (Hash(x, y, 4) % 11 == 0) px[y * s + x] = new Color32(92, 66, 48, 255);
+            }
+        });
+
+        public static Sprite Weed() => EnsureSprite("weed", (px, s) =>
+        {
+            var dark = new Color32(60, 130, 50, 255);
+            var light = new Color32(110, 190, 80, 255);
+            Fill(px, Clear);
+            Line(px, s, 4, 2, 3, 10, dark);
+            Line(px, s, 7, 2, 7, 13, light);
+            Line(px, s, 9, 2, 11, 11, dark);
+            Line(px, s, 12, 2, 13, 8, light);
+            Line(px, s, 6, 2, 5, 7, light);
+        });
+
+        public static Sprite Branch() => EnsureSprite("branch", (px, s) =>
+        {
+            var wood = new Color32(116, 78, 44, 255);
+            Fill(px, Clear);
+            Line(px, s, 2, 4, 13, 10, wood);
+            Line(px, s, 2, 5, 13, 11, wood);
+            Line(px, s, 6, 6, 8, 12, wood);
+            Line(px, s, 9, 8, 12, 5, wood);
+        });
+
+        public static Sprite Well() => EnsureSprite("well", (px, s) =>
+        {
+            Fill(px, Clear);
+            Disc(px, s, 8f, 7f, 7f, new Color32(128, 128, 134, 255));
+            Disc(px, s, 8f, 7f, 5f, new Color32(70, 70, 76, 255));
+            Disc(px, s, 8f, 7f, 4f, new Color32(58, 118, 202, 255));
+            Rect(px, s, 2, 11, 4, 16, new Color32(110, 72, 40, 255));
+            Rect(px, s, 12, 11, 14, 16, new Color32(110, 72, 40, 255));
+            Rect(px, s, 1, 14, 15, 16, new Color32(150, 60, 50, 255));
+        });
+
         public static Sprite Bed() => EnsureSprite("bed", (px, s) =>
         {
             Fill(px, Clear);

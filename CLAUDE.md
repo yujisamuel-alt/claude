@@ -38,6 +38,8 @@ Pós-MVP (só deixar a arquitetura preparada): pesca, mina, animais, cozinha, up
   Serviços de cena (fader, caixa Sim/Não) usam `ServiceLocator.Replace` no Awake e `Unregister(instância)` no OnDestroy.
 - Pausa do mundo: `GameplayPause` (serviço). Diálogos/menus/transições fazem `Push(this)` e `Pop(this)`;
   o `ClockDriver` e o `PlayerController` respeitam. Soltar a pausa 1 frame depois de confirmar com o gamepad (evita reabrir).
+- Dependências entre módulos (sem ciclos): Core ← Inventory, Calendar ← Farming (Core, Inventory, Calendar), Player (Core, Inventory, Calendar),
+  UI (todos os de runtime), EditorTools (todos). Um módulo "fala" com outro por interface/serviço do Core (`IToolTarget`, `ITileToolHandler`, `IPlayerAnchor`, `IToastService`).
 - Interação: qualquer objeto com `IInteractable` + `Collider2D` no tile alvo é acionado pelo `PlayerInteractor`.
 - Dados fora do código: itens, sementes, ferramentas, moradores, lojas, diálogos e balanceamento em ScriptableObjects
   (`Assets/_Project/Data/`). Nada de números mágicos.
@@ -85,7 +87,7 @@ Pós-MVP (só deixar a arquitetura preparada): pesca, mina, animais, cozinha, up
 | 1 | Jogador, Input System, câmera Cinemachine, mapa de teste com colisão | ✅ Código pronto; aguardando validação no editor |
 | 2 | Relógio, calendário, luz do dia, dormir | ✅ Código pronto; aguardando validação no editor |
 | 3 | Inventário e barra rápida | ✅ Código pronto; aguardando validação no editor |
-| 4 | Ferramentas e energia | ⏳ |
+| 4 | Ferramentas e energia | ✅ Código pronto; aguardando validação no editor |
 | 5 | Plantio, colheita e clima simples | ⏳ |
 | 6 | Baú de entregas, dinheiro e Venda da Dona Cida | ⏳ |
 | 7 | Save/Load e menu principal | ⏳ |
@@ -138,3 +140,16 @@ Pós-MVP (só deixar a arquitetura preparada): pesca, mina, animais, cozinha, up
 - UI: `HotbarView`, `InventoryScreen` (E/Tab/Y; pausa o mundo; clique pega/solta, direito divide ou solta 1, arrastar e soltar, clicar fora descarta; D-pad navega, A pega/solta),
   `InventorySlotView` (Selectable), `InventoryDropZone`, `SlotVisual`. Montados por `InventoryUiBuilder`.
 - Ainda não existe: usar o item selecionado (Etapa 4), vender (Etapa 6), save (Etapa 7).
+
+### Etapa 4: o que existe
+- `CellPosition` agora mora no Core (usado por Player e Farming). `ToolType`, `ToolRules`, `ToolUseOutcome` (None/Used/UsedFree/Rejected), `ITileToolHandler`, `IToolTarget`, `IToastService` no Core.
+- Player: `EnergyModel`/`EnergySettings` (puro: 270, desmaio abaixo de -15, lento com 0 ou menos), `EnergyConfig`, `ToolConfig` (custo e duração por ferramenta),
+  `PlayerInstaller`, `EnergyController` (recupera ao virar o dia e pede desmaio), `ToolUser` (usa a ferramenta selecionada no tile alvo: objetos primeiro, depois o chão).
+- `ItemDefinition` ganhou `ToolType` e `ToolTier` (0 = básica; cobre/ferro/ouro virão depois e reduzem o custo de energia).
+- Farming: `FarmGrid` (terra arada/regada/ocupada), `WateringCanState` (capacidade 40), `FarmTilemapController` (arar, regar, encher na água, virada do dia),
+  `ResourceNode` + `ResourceNodeDefinition` (mato, galho, pedra, árvore), `FarmObjectField` (espalha e faz reaparecer aos poucos), `WaterSource` (poço), `FarmingInstaller`.
+  O estado da terra vive em serviços do Bootstrap, então sobrevive à troca de cena.
+- UI: `EnergyBarView`, `ToolStatusView` (água do regador), `ToastView` agora é o `IToastService`.
+- Decisões (placeholders, mude no Inspector): energia só é gasta quando a ferramenta **funciona** (errar o alvo não custa); dormir recupera tudo e desmaiar recupera 50%;
+  terra arada sem planta volta a ser grama com 10% de chance por dia; custos: enxada 3, regador 2, foice 2, machado 6, picareta 5.
+- Ainda não: chuva e plantas (Etapa 5), comer para recuperar energia (`EnergyModel.Restore` pronto), perda de dinheiro ao desmaiar (Etapa 6), save da terra e dos objetos (Etapa 7).

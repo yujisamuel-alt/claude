@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Enxada.Core;
 using Enxada.Inventory;
 using UnityEditor;
 using UnityEngine;
@@ -30,16 +31,17 @@ namespace Enxada.EditorTools
             public int SellPrice;
             public int MaxStack;
             public Action<Color32[], int> Paint;
+            public ToolType ToolType;
         }
 
         // Preços de venda das colheitas vêm da tabela da Primavera; os demais são placeholders de balanceamento.
         private static List<Entry> Entries() => new List<Entry>
         {
-            Tool("hoe", PaintHoe),
-            Tool("watering_can", PaintWateringCan),
-            Tool("scythe", PaintScythe),
-            Tool("axe", PaintAxe),
-            Tool("pickaxe", PaintPickaxe),
+            Tool("hoe", ToolType.Hoe, PaintHoe),
+            Tool("watering_can", ToolType.WateringCan, PaintWateringCan),
+            Tool("scythe", ToolType.Scythe, PaintScythe),
+            Tool("axe", ToolType.Axe, PaintAxe),
+            Tool("pickaxe", ToolType.Pickaxe, PaintPickaxe),
             Stackable("wood", ItemCategory.Resource, 2, PaintWood),
             Stackable("stone", ItemCategory.Resource, 2, PaintStone),
             Stackable("lettuce_seed", ItemCategory.Seed, 10, (p, s) => PaintSeed(p, s, new Color32(110, 190, 90, 255))),
@@ -54,8 +56,8 @@ namespace Enxada.EditorTools
             Stackable("strawberry", ItemCategory.Crop, 120, PaintStrawberry)
         };
 
-        private static Entry Tool(string id, Action<Color32[], int> paint) =>
-            new Entry { Id = id, Category = ItemCategory.Tool, SellPrice = 0, MaxStack = 1, Paint = paint };
+        private static Entry Tool(string id, ToolType toolType, Action<Color32[], int> paint) =>
+            new Entry { Id = id, Category = ItemCategory.Tool, SellPrice = 0, MaxStack = 1, Paint = paint, ToolType = toolType };
 
         private static Entry Stackable(string id, ItemCategory category, int price, Action<Color32[], int> paint) =>
             new Entry { Id = id, Category = category, SellPrice = price, MaxStack = 999, Paint = paint };
@@ -67,7 +69,8 @@ namespace Enxada.EditorTools
             {
                 var icon = PlaceholderArt.EnsureSpriteIn(IconsFolder, "icon_" + entry.Id, entry.Paint);
                 var item = SetupUtil.EnsureAsset<ItemDefinition>($"{ItemsFolder}/{entry.Id}.asset",
-                    asset => asset.Initialize(entry.Id, entry.Category, entry.SellPrice, entry.MaxStack, icon));
+                    asset => asset.Initialize(entry.Id, entry.Category, entry.SellPrice, entry.MaxStack, icon, entry.ToolType));
+                EnsureToolType(item, entry.ToolType);
                 created.Add(item);
             }
 
@@ -80,6 +83,22 @@ namespace Enxada.EditorTools
             so.ApplyModifiedPropertiesWithoutUndo();
             EditorUtility.SetDirty(database);
             return database;
+        }
+
+        // Itens criados antes da Etapa 4 não tinham tipo de ferramenta: corrige sem mexer em preço, nível etc.
+        private static void EnsureToolType(ItemDefinition item, ToolType toolType)
+        {
+            if (toolType == ToolType.None)
+                return;
+
+            var so = new SerializedObject(item);
+            var property = so.FindProperty("toolType");
+            if (property.enumValueIndex == (int)toolType)
+                return;
+
+            property.enumValueIndex = (int)toolType;
+            so.ApplyModifiedPropertiesWithoutUndo();
+            EditorUtility.SetDirty(item);
         }
 
         public static InventoryConfig EnsureConfig(ItemDatabase database)

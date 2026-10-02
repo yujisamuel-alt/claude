@@ -93,3 +93,8 @@ item.corn.name = Milho
 item.corn.desc = Doce e dourado.
 item.strawberry.name = Morango
 item.strawberry.desc = Vermelhinho e docinho.
+
+# Ferramentas e energia
+hud.water = Água: {0}/{1}
+toast.can_empty = O regador está vazio. Encha no poço ou na lagoa!
+toast.tool_weak = Essa ferramenta ainda não dá conta disso.

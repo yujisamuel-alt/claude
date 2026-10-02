@@ -1,4 +1,5 @@
 using System.Collections;
+using Enxada.Core;
 using TMPro;
 using UnityEngine;
 
@@ -6,7 +7,7 @@ namespace Enxada.UI
 {
     /// <summary>Aviso curto que aparece, fica alguns segundos e some (ex.: "Tá ficando tarde...").</summary>
     [RequireComponent(typeof(CanvasGroup))]
-    public sealed class ToastView : MonoBehaviour
+    public sealed class ToastView : MonoBehaviour, IToastService
     {
         [SerializeField] private TMP_Text label;
         [Min(0.5f)] [SerializeField] private float visibleSeconds = 3.5f;
@@ -19,7 +20,10 @@ namespace Enxada.UI
         {
             _group = GetComponent<CanvasGroup>();
             _group.alpha = 0f;
+            ServiceLocator.Replace<IToastService>(this);
         }
+
+        private void OnDestroy() => ServiceLocator.Unregister<IToastService>(this);
 
         public void Show(string message)
         {

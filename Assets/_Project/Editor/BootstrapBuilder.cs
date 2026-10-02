@@ -1,6 +1,8 @@
 using Enxada.Calendar;
 using Enxada.Core;
+using Enxada.Farming;
 using Enxada.Inventory;
+using Enxada.Player;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -38,6 +40,16 @@ namespace Enxada.EditorTools
             Wire(inventory, "config", inventoryConfig);
             Wire(inventory, "database", database);
 
+            var player = go.AddComponent<PlayerInstaller>();
+            Wire(player, "energyConfig", FarmSetup.EnsureEnergyConfig());
+            Wire(player, "toolConfig", FarmSetup.EnsureToolConfig());
+
+            var farming = go.AddComponent<FarmingInstaller>();
+            Wire(farming, "config", FarmSetup.EnsureFarmingConfig());
+
+            var energyController = go.AddComponent<EnergyController>();
+            Wire(energyController, "passOutRequested", FarmSetup.EnsurePassOutChannel());
+
             clockDriver = go.AddComponent<ClockDriver>();
 
             var hotbarSelector = go.AddComponent<HotbarSelector>();
@@ -50,10 +62,12 @@ namespace Enxada.EditorTools
             so.FindProperty("config").objectReferenceValue = gameConfig;
             so.FindProperty("loadFirstScene").boolValue = loadFirstScene;
             var installers = so.FindProperty("installers");
-            installers.arraySize = 3;
+            installers.arraySize = 5;
             installers.GetArrayElementAtIndex(0).objectReferenceValue = text;
             installers.GetArrayElementAtIndex(1).objectReferenceValue = calendar;
             installers.GetArrayElementAtIndex(2).objectReferenceValue = inventory;
+            installers.GetArrayElementAtIndex(3).objectReferenceValue = player;
+            installers.GetArrayElementAtIndex(4).objectReferenceValue = farming;
             so.ApplyModifiedPropertiesWithoutUndo();
 
             return go;

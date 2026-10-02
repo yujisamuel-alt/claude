@@ -2,7 +2,9 @@
     "name": "Enxada.Farming",
     "rootNamespace": "Enxada.Farming",
     "references": [
-        "Enxada.Core"
+        "Enxada.Core",
+        "Enxada.Inventory",
+        "Enxada.Calendar"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

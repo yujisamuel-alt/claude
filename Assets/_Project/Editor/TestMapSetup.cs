@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using Enxada.Calendar;
 using Enxada.Core;
+using Enxada.Farming;
 using Enxada.Inventory;
 using Enxada.Player;
 using Unity.Cinemachine;
@@ -35,6 +36,9 @@ namespace Enxada.EditorTools
         // Cama e ponto onde o jogador acorda (dentro da clareira inicial).
         private static readonly Vector2Int BedCell = new Vector2Int(22, 19);
         private static readonly Vector2Int WakeCell = new Vector2Int(22, 18);
+
+        // O poço fica na clareira, perto da cama.
+        private static readonly Vector2Int WellCell = new Vector2Int(20, 20);
 
         private const int MapWidth = 48;
         private const int MapHeight = 32;
@@ -76,18 +80,21 @@ namespace Enxada.EditorTools
             BootstrapBuilder.Build(gameConfig, false, out var clockDriver);
 
             var grid = new GameObject("Grid").AddComponent<Grid>();
-            BuildTilemaps(grid);
+            var layers = BuildTilemaps(grid);
 
             var player = (GameObject)PrefabUtility.InstantiatePrefab(playerPrefab);
             player.transform.position = new Vector3(Spawn.x + 0.5f, Spawn.y + 0.5f, 0f);
 
+            var database = ItemSetup.EnsureDatabase();
             BuildHighlight(config, player.GetComponent<PlayerController>(), grid, inputActions);
+            BuildFarm(layers, grid, database);
             var globalLight = BuildGlobalLight();
             BuildCamera(player.transform);
 
             HudBuilder.Build(inputActions);
             var transition = BuildSleepSystem(player.transform, clockDriver);
-            BuildWorldItems(ItemSetup.EnsureDatabase());
+            BuildWorldItems(database);
+            BuildWell();
             BuildDayNightLighting(globalLight);
             AddDebugKeys(clockDriver, transition);
 
@@ -152,16 +159,27 @@ namespace Enxada.EditorTools
 
         // ------------------------------------------------------------------ mapa
 
-        private static void BuildTilemaps(Grid grid)
+        private sealed class MapLayers
+        {
+            public Tilemap Ground;
+            public Tilemap Soil;
+            public Tilemap Obstacles;
+            public TileBase Grass;
+            public TileBase Dirt;
+            public TileBase Water;
+        }
+
+        private static MapLayers BuildTilemaps(Grid grid)
         {
             var grass = PlaceholderArt.EnsureTile("Grass", PlaceholderArt.Grass(), Tile.ColliderType.None);
             var dirt = PlaceholderArt.EnsureTile("Dirt", PlaceholderArt.Dirt(), Tile.ColliderType.None);
             var water = PlaceholderArt.EnsureTile("Water", PlaceholderArt.Water(), Tile.ColliderType.Grid);
             var tree = PlaceholderArt.EnsureTile("Tree", PlaceholderArt.Tree(), Tile.ColliderType.Grid);
-            var rock = PlaceholderArt.EnsureTile("Rock", PlaceholderArt.Rock(), Tile.ColliderType.Grid);
 
+            // Ordem de desenho: chão < terra arada < obstáculos < objetos do sítio (2) < itens (3) < jogador (10).
             var ground = CreateTilemap(grid.transform, "Ground", 0);
-            var obstacles = CreateTilemap(grid.transform, "Obstacles", 1);
+            var soil = CreateTilemap(grid.transform, "Soil", 1);
+            var obstacles = CreateTilemap(grid.transform, "Obstacles", 2);
 
             var obstaclesGo = obstacles.gameObject;
             var body = obstaclesGo.AddComponent<Rigidbody2D>();
@@ -177,28 +195,25 @@ namespace Enxada.EditorTools
                 var cell = new Vector3Int(x, y, 0);
                 ground.SetTile(cell, y == Spawn.y - 1 && x > 0 && x < MapWidth - 1 ? dirt : grass);
 
-                var obstacle = ObstacleAt(x, y, water, tree, rock);
+                var obstacle = ObstacleAt(x, y, water, tree);
                 if (obstacle != null)
                     obstacles.SetTile(cell, obstacle);
             }
+
+            return new MapLayers { Ground = ground, Soil = soil, Obstacles = obstacles, Grass = grass, Dirt = dirt, Water = water };
         }
 
-        private static TileBase ObstacleAt(int x, int y, TileBase water, TileBase tree, TileBase rock)
+        // Só a borda do mapa e a lagoa ficam no tilemap. Mato, galhos, pedras e árvores do sítio
+        // são objetos (FarmObjectField), porque reagem às ferramentas.
+        private static TileBase ObstacleAt(int x, int y, TileBase water, TileBase tree)
         {
             if (x == 0 || y == 0 || x == MapWidth - 1 || y == MapHeight - 1)
-                return tree; // borda do mapa
+                return tree;
 
             if (x >= 30 && x <= 38 && y >= 8 && y <= 14)
-                return water; // lagoa
+                return water;
 
-            var nearSpawn = Mathf.Abs(x - Spawn.x) <= 4 && Mathf.Abs(y - Spawn.y) <= 4;
-            if (nearSpawn)
-                return null; // clareira para começar
-
-            var h = PlaceholderArt.Hash(x, y, 7);
-            if (h % 19 != 0)
-                return null;
-            return h % 2 == 0 ? tree : rock;
+            return null;
         }
 
         private static Tilemap CreateTilemap(Transform parent, string name, int sortingOrder)
@@ -234,6 +249,63 @@ namespace Enxada.EditorTools
             interactorSo.FindProperty("player").objectReferenceValue = player;
             interactorSo.FindProperty("inputActions").objectReferenceValue = inputActions;
             interactorSo.ApplyModifiedPropertiesWithoutUndo();
+
+            var swingGo = new GameObject("ToolSwing");
+            var swing = swingGo.AddComponent<SpriteRenderer>();
+            swing.sortingOrder = 11;
+
+            var toolUser = go.AddComponent<ToolUser>();
+            var toolSo = new SerializedObject(toolUser);
+            toolSo.FindProperty("config").objectReferenceValue = FarmSetup.EnsureToolConfig();
+            toolSo.FindProperty("selector").objectReferenceValue = selector;
+            toolSo.FindProperty("player").objectReferenceValue = player;
+            toolSo.FindProperty("grid").objectReferenceValue = grid;
+            toolSo.FindProperty("inputActions").objectReferenceValue = inputActions;
+            toolSo.FindProperty("swing").objectReferenceValue = swing;
+            toolSo.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        // ------------------------------------------------------------------ fazenda
+
+        private static void BuildFarm(MapLayers layers, Grid grid, ItemDatabase database)
+        {
+            var farmGo = new GameObject("Farm");
+            var farm = farmGo.AddComponent<FarmTilemapController>();
+            var farmSo = new SerializedObject(farm);
+            farmSo.FindProperty("grid").objectReferenceValue = grid;
+            farmSo.FindProperty("ground").objectReferenceValue = layers.Ground;
+            farmSo.FindProperty("soil").objectReferenceValue = layers.Soil;
+            farmSo.FindProperty("obstacles").objectReferenceValue = layers.Obstacles;
+            farmSo.FindProperty("tilledTile").objectReferenceValue = FarmSetup.TilledTile();
+            farmSo.FindProperty("wateredTile").objectReferenceValue = FarmSetup.WateredTile();
+            farmSo.FindProperty("waterTile").objectReferenceValue = layers.Water;
+            var tillable = farmSo.FindProperty("tillableGroundTiles");
+            tillable.arraySize = 2;
+            tillable.GetArrayElementAtIndex(0).objectReferenceValue = layers.Grass;
+            tillable.GetArrayElementAtIndex(1).objectReferenceValue = layers.Dirt;
+            farmSo.ApplyModifiedPropertiesWithoutUndo();
+
+            var field = farmGo.AddComponent<FarmObjectField>();
+            var fieldSo = new SerializedObject(field);
+            fieldSo.FindProperty("config").objectReferenceValue = FarmSetup.EnsureObjectConfig(database);
+            fieldSo.FindProperty("farm").objectReferenceValue = farm;
+            fieldSo.FindProperty("grid").objectReferenceValue = grid;
+            fieldSo.FindProperty("boundsMin").vector2IntValue = new Vector2Int(1, 1);
+            fieldSo.FindProperty("boundsMax").vector2IntValue = new Vector2Int(MapWidth - 2, MapHeight - 2);
+            fieldSo.FindProperty("clearingMin").vector2IntValue = new Vector2Int(Spawn.x - 5, Spawn.y - 5);
+            fieldSo.FindProperty("clearingMax").vector2IntValue = new Vector2Int(Spawn.x + 5, Spawn.y + 5);
+            fieldSo.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        private static void BuildWell()
+        {
+            var well = new GameObject("Well");
+            well.transform.position = new Vector3(WellCell.x + 0.5f, WellCell.y + 0.5f, 0f);
+            var renderer = well.AddComponent<SpriteRenderer>();
+            renderer.sprite = PlaceholderArt.Well();
+            renderer.sortingOrder = 2;
+            well.AddComponent<BoxCollider2D>().size = Vector2.one;
+            well.AddComponent<WaterSource>();
         }
 
         // ------------------------------------------------------------------ dormir e luz
@@ -291,6 +363,7 @@ namespace Enxada.EditorTools
             so.FindProperty("playerTransform").objectReferenceValue = player;
             so.FindProperty("wakePoint").objectReferenceValue = wake.transform;
             so.FindProperty("demoEnded").objectReferenceValue = demoEnded;
+            so.FindProperty("passOutRequested").objectReferenceValue = FarmSetup.EnsurePassOutChannel();
             so.ApplyModifiedPropertiesWithoutUndo();
 
             var sleep = bed.AddComponent<SleepInteractable>();

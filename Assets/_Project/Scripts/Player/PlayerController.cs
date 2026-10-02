@@ -22,6 +22,8 @@ namespace Enxada.Player
         private InputAction _move;
         private Vector2 _velocity;
         private GameplayPause _pause;
+        private EnergyModel _energy;
+        private float _movementLockedUntil;
 
         public FacingDirection Facing { get; private set; } = FacingDirection.Down;
         public bool IsMoving { get; private set; }
@@ -68,7 +70,15 @@ namespace Enxada.Player
 
         private void OnDestroy() => ServiceLocator.Unregister<IPlayerAnchor>(this);
 
-        private void Start() => ServiceLocator.TryGet(out _pause);
+        private void Start()
+        {
+            ServiceLocator.TryGet(out _pause);
+            ServiceLocator.TryGet(out _energy);
+        }
+
+        /// <summary>Segura o jogador parado por um instante (ex.: enquanto balança a ferramenta).</summary>
+        public void LockMovementFor(float seconds) =>
+            _movementLockedUntil = Mathf.Max(_movementLockedUntil, Time.time + seconds);
 
         private void OnEnable()
         {
@@ -86,11 +96,12 @@ namespace Enxada.Player
 
         private void Update()
         {
-            var canMove = InputEnabled && (_pause == null || !_pause.IsPaused);
+            var canMove = InputEnabled && Time.time >= _movementLockedUntil && (_pause == null || !_pause.IsPaused);
             var raw = canMove ? _move.ReadValue<Vector2>() : Vector2.zero;
             var result = MovementInput.Resolve(raw.x, raw.y, config.AllowDiagonal, config.Deadzone, Facing);
 
-            _velocity = new Vector2(result.X, result.Y) * config.MoveSpeed;
+            var speed = config.MoveSpeed * (_energy != null ? _energy.SpeedMultiplier : 1f);
+            _velocity = new Vector2(result.X, result.Y) * speed;
             IsMoving = result.IsMoving;
 
             if (result.Facing != Facing)

@@ -3,6 +3,8 @@
     "rootNamespace": "Enxada.Player",
     "references": [
         "Enxada.Core",
+        "Enxada.Inventory",
+        "Enxada.Calendar",
         "Unity.InputSystem"
     ],
     "includePlatforms": [],

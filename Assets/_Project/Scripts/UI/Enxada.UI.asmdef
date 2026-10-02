@@ -5,6 +5,8 @@
         "Enxada.Core",
         "Enxada.Calendar",
         "Enxada.Inventory",
+        "Enxada.Farming",
+        "Enxada.Player",
         "Unity.TextMeshPro",
         "UnityEngine.UI",
         "Unity.InputSystem"

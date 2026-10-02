@@ -51,6 +51,9 @@ namespace Enxada.EditorTools
             var toast = toastPanel.gameObject.AddComponent<ToastView>();
             Wire(toast, so => so.FindProperty("label").objectReferenceValue = toastLabel);
 
+            BuildEnergyBar(root);
+            BuildToolStatus(root);
+
             var hud = canvasGo.AddComponent<HudController>();
             Wire(hud, so =>
             {
@@ -62,6 +65,42 @@ namespace Enxada.EditorTools
             InventoryUiBuilder.Build(root, inputActions);
             BuildConfirmDialog(root, inputActions);
             BuildFader(root);
+        }
+
+        private static void BuildEnergyBar(Transform root)
+        {
+            // Canto inferior direito. O "Fill" cresce de baixo para cima (a view mexe no anchorMax.y).
+            var bar = CreatePanel(root, "EnergyBar", new Vector2(1f, 0f), new Vector2(-14f, 14f), new Vector2(26f, 130f));
+
+            var fillGo = new GameObject("Fill", typeof(RectTransform), typeof(Image));
+            fillGo.transform.SetParent(bar, false);
+            var fillRect = fillGo.GetComponent<RectTransform>();
+            fillRect.anchorMin = Vector2.zero;
+            fillRect.anchorMax = Vector2.one;
+            fillRect.offsetMin = new Vector2(3f, 3f);
+            fillRect.offsetMax = new Vector2(-3f, -3f);
+            var fillImage = fillGo.GetComponent<Image>();
+            fillImage.raycastTarget = false;
+
+            var view = bar.gameObject.AddComponent<EnergyBarView>();
+            Wire(view, so =>
+            {
+                so.FindProperty("fill").objectReferenceValue = fillRect;
+                so.FindProperty("fillImage").objectReferenceValue = fillImage;
+            });
+        }
+
+        private static void BuildToolStatus(Transform root)
+        {
+            // Logo acima da barra rápida.
+            var label = CreateText(root, "ToolStatus", 18f, TextAlignmentOptions.Center, Vector2.zero, Vector2.one);
+            var rect = label.rectTransform;
+            rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(0.5f, 0f);
+            rect.anchoredPosition = new Vector2(0f, 68f);
+            rect.sizeDelta = new Vector2(300f, 26f);
+
+            var view = label.gameObject.AddComponent<ToolStatusView>();
+            Wire(view, so => so.FindProperty("label").objectReferenceValue = label);
         }
 
         private static void BuildEventSystem()

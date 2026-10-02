@@ -16,6 +16,9 @@ namespace Enxada.Calendar
         [Tooltip("Disparado quando a Primavera termina (tela de fim da demo, na Etapa 6).")]
         [SerializeField] private VoidEventChannel demoEnded;
 
+        [Tooltip("Pedido de desmaio por exaustão (energia abaixo do limite), vindo do módulo Player.")]
+        [SerializeField] private VoidEventChannel passOutRequested;
+
         [Tooltip("Tempo com a tela escura entre apagar e acordar.")]
         [Min(0f)] [SerializeField] private float blackHoldSeconds = 0.6f;
 
@@ -30,12 +33,16 @@ namespace Enxada.Calendar
             _clock = ServiceLocator.Get<GameClock>();
             _pause = ServiceLocator.Get<GameplayPause>();
             _clock.PassOutReached += OnPassOutReached;
+            if (passOutRequested != null)
+                passOutRequested.Subscribe(OnPassOutReached);
         }
 
         private void OnDestroy()
         {
             if (_clock != null)
                 _clock.PassOutReached -= OnPassOutReached;
+            if (passOutRequested != null)
+                passOutRequested.Unsubscribe(OnPassOutReached);
         }
 
         /// <summary>Chamado pela cama depois que o jogador confirma.</summary>

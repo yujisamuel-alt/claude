@@ -1,3 +1,4 @@
+using Enxada.Core;
 using Enxada.Player;
 using NUnit.Framework;
 

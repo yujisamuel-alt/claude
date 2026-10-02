@@ -1,3 +1,4 @@
+using Enxada.Core;
 using UnityEngine;
 
 namespace Enxada.Inventory
@@ -21,6 +22,14 @@ namespace Enxada.Inventory
         [Tooltip("Tamanho máximo da pilha. Ferramentas usam 1.")]
         [Range(1, 999)] [SerializeField] private int maxStack = 999;
 
+        [Tooltip("Só para ferramentas: o que ela faz.")]
+        [SerializeField] private ToolType toolType;
+
+        [Tooltip("Nível da ferramenta: 0 = básica; cobre, ferro e ouro virão depois.")]
+        [Min(0)] [SerializeField] private int toolTier;
+
+        public ToolType ToolType => toolType;
+        public int ToolTier => toolTier;
         public string Id => id;
         public ItemCategory Category => category;
         public Sprite Icon => icon;
@@ -29,8 +38,10 @@ namespace Enxada.Inventory
         public bool IsStackable => maxStack > 1;
 
         /// <summary>Usado pelos scripts de setup do editor para criar itens por código.</summary>
-        public void Initialize(string newId, ItemCategory newCategory, int newSellPrice, int newMaxStack, Sprite newIcon)
+        public void Initialize(string newId, ItemCategory newCategory, int newSellPrice, int newMaxStack, Sprite newIcon,
+            ToolType newToolType = ToolType.None)
         {
+            toolType = newToolType;
             id = newId;
             category = newCategory;
             sellPrice = newSellPrice;
